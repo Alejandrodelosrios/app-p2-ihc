@@ -44,16 +44,26 @@
       [error]="animalTypeError()"
     />
 
-    @if(canReschedule()) {
+    @if (canReschedule()) {
       <app-form-field
         fieldId="care-date"
         label="Fecha"
         type="date"
         [control]="form.controls.careDate"
         [error]="careDateError()"
-      />  
-  }
-  
+        [min]="editing ? today : ''"
+      />
+
+      @if (editing) {
+        <p class="care-form__hint">La nueva fecha no puede ser anterior a hoy.</p>
+      }
+    } @else {
+      <div class="feedback feedback--info" role="status">
+        <app-icon name="info" [size]="20" />
+        <span>Este cuidado ya fue realizado y no puede reprogramarse.</span>
+      </div>
+    }
+
     @if (successMessage()) {
       <div class="feedback feedback--success" role="status">
         <app-icon name="check_circle" [size]="20" />

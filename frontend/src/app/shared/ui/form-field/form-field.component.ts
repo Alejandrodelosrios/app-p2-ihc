@@ -15,6 +15,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
         [formControl]="control()"
         [attr.autocomplete]="autocomplete()"
         [attr.placeholder]="placeholder()"
+        [attr.min]="min() || null"
         [attr.aria-invalid]="!!error()"
         [attr.aria-describedby]="error() ? fieldId() + '-error' : null"
       />
@@ -32,5 +33,6 @@ export class FormFieldComponent {
   readonly type = input<'text' | 'email' | 'password' | 'date'>('text');
   readonly autocomplete = input('');
   readonly placeholder = input('');
+  readonly min = input('');
   readonly error = input<string | null>(null);
 }

@@ -31,6 +31,8 @@ export class CareRecord {
   readonly errorMessage = signal('');
   readonly editId = this.route.snapshot.paramMap.get('id');
   readonly editing = this.editId !== null;
+  private readonly currentDate = new Date();
+  readonly today = `${this.currentDate.getFullYear()}-${String(this.currentDate.getMonth() + 1).padStart(2, '0')}-${String(this.currentDate.getDate()).padStart(2, '0')}`;
 
   readonly form = this.fb.nonNullable.group({
     petName: ['', Validators.required],

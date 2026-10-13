@@ -52,6 +52,12 @@
   gap: 1.1rem;
 }
 
+.care-form__hint {
+  margin: -0.7rem 0 0;
+  font-size: 0.85rem;
+  opacity: 0.7;
+}
+
 .care-form__actions {
   margin-top: 0.4rem;
 }
@@ -81,6 +87,10 @@
 .feedback--error {
   color: #c03535;
   background: rgba(192, 53, 53, 0.1);
+}
+
+.feedback--info {
+  background: color-mix(in srgb, currentColor 8%, transparent);
 }
 
 @media (min-width: 48rem) {
