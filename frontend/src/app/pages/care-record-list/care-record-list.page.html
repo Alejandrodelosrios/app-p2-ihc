@@ -17,6 +17,77 @@
     </a>
   </header>
 
+  <form class="filters" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+    <div class="filters__grid">
+      <label class="filter-field">
+        <span>Mascota</span>
+        <input type="search" formControlName="petName" placeholder="Buscar por nombre" />
+      </label>
+
+      <label class="filter-field">
+        <span>Estado</span>
+        <select formControlName="status">
+          <option value="">Todos</option>
+          <option value="PENDING">Pendiente</option>
+          <option value="COMPLETED">Realizado</option>
+        </select>
+      </label>
+
+      <label class="filter-field">
+        <span>Tipo</span>
+        <select formControlName="careType">
+          <option value="">Todos</option>
+          <option value="VACCINE">Vacuna</option>
+          <option value="MEDICATION">Medicamento</option>
+          <option value="CONTROL">Control</option>
+          <option value="OTHER">Otro</option>
+        </select>
+      </label>
+
+      <label class="filter-field">
+        <span>Fecha</span>
+        <select formControlName="dateFilter">
+          <option value="">Cualquier fecha</option>
+          <option value="NEXT_7_DAYS">Próximos 7 días</option>
+          <option value="THIS_MONTH">Este mes</option>
+          <option value="RANGE">Rango de fechas</option>
+        </select>
+      </label>
+    </div>
+
+    @if (filterForm.controls.dateFilter.value === 'RANGE') {
+      <div class="filters__range">
+        <label class="filter-field">
+          <span>Desde</span>
+          <input type="date" formControlName="fromDate" />
+        </label>
+
+        <label class="filter-field">
+          <span>Hasta</span>
+          <input type="date" formControlName="toDate" />
+        </label>
+      </div>
+    }
+
+    <div class="filters__actions">
+      <button class="filter-button" type="submit">Aplicar filtros</button>
+      @if (hasActiveFilters()) {
+        <button class="clear-filter-button" type="button" (click)="clearFilters()">
+          Limpiar filtros
+        </button>
+      }
+    </div>
+
+    @if (activeFilters().length > 0) {
+      <div class="active-filters" aria-live="polite">
+        <strong>Filtros activos:</strong>
+        @for (filter of activeFilters(); track filter) {
+          <span>{{ filter }}</span>
+        }
+      </div>
+    }
+  </form>
+
   @if (loading()) {
     <div class="state-card">
       <app-icon name="progress_activity" [size]="32" />
@@ -38,20 +109,19 @@
     </div>
   } @else if (records().length === 0) {
     <div class="state-card">
-      <app-icon name="pets" [size]="42" />
+      <app-icon [name]="hasActiveFilters() ? 'search_off' : 'pets'" [size]="42" />
 
-      <h2>Aún no hay cuidados</h2>
-
-      <p>
-        Registra el primer cuidado de una de tus mascotas.
-      </p>
-
-      <a
-        class="empty-action"
-        routerLink="/cuidados/nuevo"
-      >
-        Registrar cuidado
-      </a>
+      @if (hasActiveFilters()) {
+        <h2>Sin resultados</h2>
+        <p>No hay cuidados que coincidan con los filtros seleccionados.</p>
+        <button class="empty-action" type="button" (click)="clearFilters()">
+          Limpiar filtros
+        </button>
+      } @else {
+        <h2>Aún no hay cuidados</h2>
+        <p>Registra el primer cuidado de una de tus mascotas.</p>
+        <a class="empty-action" routerLink="/cuidados/nuevo">Registrar cuidado</a>
+      }
     </div>
   } @else {
     @if (statusErrorMessage()) {

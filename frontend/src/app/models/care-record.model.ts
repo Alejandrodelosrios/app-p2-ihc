@@ -1,4 +1,5 @@
 export type CareRecordStatus = 'PENDING' | 'COMPLETED';
+export type CareRecordCareType = 'VACCINE' | 'MEDICATION' | 'CONTROL' | 'OTHER';
 
 export interface CareRecord {
   id: string;
@@ -16,4 +17,11 @@ export interface CreateCareRecordRequest {
   care: string;
   animalType: string;
   careDate: string;
+}
+export interface CareRecordFilters {
+  petName?: string;
+  status?: CareRecordStatus;
+  careType?: CareRecordCareType;
+  fromDate?: string;
+  toDate?: string;
 }
