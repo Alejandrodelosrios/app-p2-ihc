@@ -96,13 +96,15 @@ class CareRecordServiceTest {
         when(careRecords.findById(pending.id())).thenReturn(Optional.of(pending));
         when(careRecords.save(any(CareRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
+        LocalDate newDate = LocalDate.now().plusDays(1);
+
         CareRecord updated = service.update(
                 user.email(),
                 pending.id(),
                 "Milo actualizado",
                 "Control",
                 "Perro",
-                LocalDate.of(2026, 10, 9)
+                newDate
         );
 
         assertEquals(pending.id(), updated.id());
@@ -111,6 +113,7 @@ class CareRecordServiceTest {
         assertEquals(CareRecordStatus.PENDING, updated.status());
         assertEquals("Milo actualizado", updated.petName());
         assertEquals("Control", updated.care());
+        assertEquals(newDate, updated.careDate());
     }
 
     @Test
@@ -136,7 +139,7 @@ class CareRecordServiceTest {
         when(careRecords.findById(completed.id()))
                 .thenReturn(Optional.of(completed));
 
-        LocalDate newDate = LocalDate.of(2026, 10, 9);
+        LocalDate newDate = LocalDate.now().plusDays(1);
 
         assertThrows(
                 NotAllowedException.class,
@@ -147,6 +150,30 @@ class CareRecordServiceTest {
                         completed.care(),
                         completed.animalType(),
                         newDate
+                )
+        );
+
+        verify(careRecords, never()).save(any());
+    }
+
+    @Test
+    void pendingCareCannotBeRescheduledToPast() {
+        User user = user();
+        CareRecord pending = record(user.id(), CareRecordStatus.PENDING);
+        when(users.findByEmail(user.email())).thenReturn(Optional.of(user));
+        when(careRecords.findById(pending.id())).thenReturn(Optional.of(pending));
+
+        LocalDate pastDate = LocalDate.now().minusDays(1);
+
+        assertThrows(
+                NotAllowedException.class,
+                () -> service.update(
+                        user.email(),
+                        pending.id(),
+                        pending.petName(),
+                        pending.care(),
+                        pending.animalType(),
+                        pastDate
                 )
         );
 

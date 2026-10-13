@@ -98,8 +98,14 @@ public class CareRecordService {
                 .filter(careRecord -> careRecord.userId().equals(user.id()))
                 .orElseThrow(() -> new NotFoundException("Cuidado no encontrado"));
 
-        if (record.status() == CareRecordStatus.COMPLETED && record.careDate() != careDate) {
+        boolean dateChanged = !record.careDate().equals(careDate);
+
+        if (record.status() == CareRecordStatus.COMPLETED && dateChanged) {
             throw new NotAllowedException("No puedes reprogramar un cuidado ya hecho");
+        }
+
+        if (dateChanged && careDate.isBefore(LocalDate.now())) {
+            throw new NotAllowedException("La nueva fecha no puede ser anterior a hoy");
         }
 
         CareRecord updated = new CareRecord(
