@@ -2,11 +2,14 @@ package com.ihc.mascotas.backend.care.presentation;
 
 import com.ihc.mascotas.backend.care.application.CareRecordService;
 import com.ihc.mascotas.backend.care.domain.CareRecord;
+import com.ihc.mascotas.backend.care.domain.CareRecordStatus;
 import jakarta.validation.Valid;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -39,11 +42,23 @@ public class CareRecordController {
 
     @GetMapping
     public List<CareRecord> findByEmail(
-            Principal principal
+            Principal principal,
+            @RequestParam(required = false) String petName,
+            @RequestParam(required = false) CareRecordStatus status,
+            @RequestParam(required = false) String careType,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
     ) {
         String email = principal.getName();
 
-        return careRecordService.findByUserEmail(email);
+        return careRecordService.findByUserEmail(
+                email,
+                petName,
+                status,
+                careType,
+                fromDate,
+                toDate
+        );
     }
 
     @PatchMapping("/{id}/complete")

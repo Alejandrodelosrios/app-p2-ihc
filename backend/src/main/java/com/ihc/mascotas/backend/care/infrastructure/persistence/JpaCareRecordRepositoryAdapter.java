@@ -2,8 +2,10 @@ package com.ihc.mascotas.backend.care.infrastructure.persistence;
 
 import com.ihc.mascotas.backend.care.domain.CareRecord;
 import com.ihc.mascotas.backend.care.domain.CareRecordRepository;
+import com.ihc.mascotas.backend.care.domain.CareRecordStatus;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +29,21 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
     @Override
     public List<CareRecord> findByUserId(UUID userId) {
         return repository.findByUserId(userId)
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
+    public List<CareRecord> findByFilters(
+            UUID userId,
+            String petName,
+            CareRecordStatus status,
+            String careType,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
+        return repository.findByFilters(userId, petName, status, careType, fromDate, toDate)
                 .stream()
                 .map(this::toDomain)
                 .toList();

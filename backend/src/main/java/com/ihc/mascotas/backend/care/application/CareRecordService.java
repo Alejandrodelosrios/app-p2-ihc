@@ -51,10 +51,28 @@ public class CareRecordService {
     }
 
     public List<CareRecord> findByUserEmail(String email) {
+        return findByUserEmail(email, null, null, null, null, null);
+    }
+
+    public List<CareRecord> findByUserEmail(
+            String email,
+            String petName,
+            CareRecordStatus status,
+            String careType,
+            LocalDate fromDate,
+            LocalDate toDate
+    ) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
-        return careRecordRepository.findByUserId(user.id());
+        return careRecordRepository.findByFilters(
+                user.id(),
+                petName,
+                status,
+                careType,
+                fromDate,
+                toDate
+        );
     }
 
     public CareRecord complete(String email, UUID id) {

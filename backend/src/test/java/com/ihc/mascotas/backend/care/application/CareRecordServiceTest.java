@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -126,6 +127,61 @@ class CareRecordServiceTest {
         service.delete(user.email(), pending.id());
 
         verify(careRecords).deleteById(pending.id());
+    }
+
+    @Test
+    void filteredCareRecordsReturnMatches() {
+        User user = user();
+        CareRecord pending = record(user.id(), CareRecordStatus.PENDING);
+        LocalDate fromDate = LocalDate.of(2026, 10, 1);
+        LocalDate toDate = LocalDate.of(2026, 10, 31);
+
+        when(users.findByEmail(user.email())).thenReturn(Optional.of(user));
+        when(careRecords.findByFilters(
+                user.id(),
+                "Milo",
+                CareRecordStatus.PENDING,
+                "VACCINE",
+                fromDate,
+                toDate
+        )).thenReturn(List.of(pending));
+
+        List<CareRecord> records = service.findByUserEmail(
+                user.email(),
+                "Milo",
+                CareRecordStatus.PENDING,
+                "VACCINE",
+                fromDate,
+                toDate
+        );
+
+        assertEquals(List.of(pending), records);
+    }
+
+    @Test
+    void filteredCareRecordsCanReturnEmptyList() {
+        User user = user();
+
+        when(users.findByEmail(user.email())).thenReturn(Optional.of(user));
+        when(careRecords.findByFilters(
+                user.id(),
+                "Luna",
+                CareRecordStatus.COMPLETED,
+                "CONTROL",
+                null,
+                null
+        )).thenReturn(List.of());
+
+        List<CareRecord> records = service.findByUserEmail(
+                user.email(),
+                "Luna",
+                CareRecordStatus.COMPLETED,
+                "CONTROL",
+                null,
+                null
+        );
+
+        assertEquals(List.of(), records);
     }
 
     @Test
