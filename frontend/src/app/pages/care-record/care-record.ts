@@ -63,6 +63,10 @@ export class CareRecord {
       return true;
   }
 
+  cancel(): void {
+    this.router.navigate(['/cuidados']);
+  }
+
   submit(): void {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
