@@ -1,14 +1,15 @@
 package com.ihc.mascotas.backend.care.infrastructure.persistence;
 
-import com.ihc.mascotas.backend.care.domain.CareRecord;
-import com.ihc.mascotas.backend.care.domain.CareRecordRepository;
-import com.ihc.mascotas.backend.care.domain.CareRecordStatus;
-import org.springframework.stereotype.Repository;
-
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.springframework.stereotype.Repository;
+
+import com.ihc.mascotas.backend.care.domain.CareRecord;
+import com.ihc.mascotas.backend.care.domain.CareRecordRepository;
+import com.ihc.mascotas.backend.care.domain.CareRecordStatus;
 
 @Repository
 public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
@@ -41,9 +42,14 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
             CareRecordStatus status,
             String careType,
             LocalDate fromDate,
-            LocalDate toDate
-    ) {
-        return repository.findByFilters(userId, petName, status, careType, fromDate, toDate)
+            LocalDate toDate) {
+        return repository.findByFilters(
+                userId,
+                petName == null ? "" : petName,
+                status,
+                careType == null ? "" : careType,
+                fromDate,
+                toDate)
                 .stream()
                 .map(this::toDomain)
                 .toList();
@@ -68,8 +74,7 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
                 careRecord.animalType(),
                 careRecord.careDate(),
                 careRecord.createdAt(),
-                careRecord.status()
-        );
+                careRecord.status());
     }
 
     private CareRecord toDomain(CareRecordJpaEntity careRecord) {
@@ -81,7 +86,6 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
                 careRecord.getAnimalType(),
                 careRecord.getCareDate(),
                 careRecord.getCreatedAt(),
-                careRecord.getStatus()
-        );
+                careRecord.getStatus());
     }
 }

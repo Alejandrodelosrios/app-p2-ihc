@@ -1,13 +1,14 @@
 package com.ihc.mascotas.backend.care.infrastructure.persistence;
 
-import com.ihc.mascotas.backend.care.domain.CareRecordStatus;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
+import com.ihc.mascotas.backend.care.domain.CareRecordStatus;
 
 public interface SpringDataCareRecordRepository extends JpaRepository<CareRecordJpaEntity, UUID> {
     List<CareRecordJpaEntity> findByUserId(UUID userId);
@@ -16,10 +17,9 @@ public interface SpringDataCareRecordRepository extends JpaRepository<CareRecord
             SELECT record
             FROM CareRecordJpaEntity record
             WHERE record.userId = :userId
-              AND (:petName IS NULL OR LOWER(record.petName) LIKE LOWER(CONCAT('%', :petName, '%')))
-              AND (:status IS NULL OR record.status = :status)
+            AND (:petName = '' OR LOWER(record.petName) LIKE LOWER(CONCAT('%', :petName, '%')))              AND (:status IS NULL OR record.status = :status)
               AND (
-                    :careType IS NULL
+                    :careType = ''
                     OR (:careType = 'VACCINE' AND LOWER(record.care) LIKE '%vacuna%')
                     OR (:careType = 'MEDICATION' AND LOWER(record.care) LIKE '%medicamento%')
                     OR (:careType = 'CONTROL' AND LOWER(record.care) LIKE '%control%')
