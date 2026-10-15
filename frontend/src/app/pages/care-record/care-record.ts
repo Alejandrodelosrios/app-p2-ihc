@@ -64,7 +64,7 @@ export class CareRecord {
   }
 
   cancel(): void {
-    this.router.navigate(['/cuidados']);
+    this.router.navigate(['/cuidados'], { queryParamsHandling: 'preserve' });
   }
 
   submit(): void {
@@ -89,7 +89,7 @@ export class CareRecord {
       .subscribe({
         next: () => {
           if (this.editing) {
-            this.router.navigate(['/cuidados']);
+            this.router.navigate(['/cuidados'], { queryParamsHandling: 'preserve' });
             return;
           }
 

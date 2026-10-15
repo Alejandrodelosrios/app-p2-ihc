@@ -1,6 +1,6 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { CareRecordService } from '../../core/care/care-record';
@@ -23,6 +23,8 @@ import { CareRecordCardComponent } from './care-record-card/care-record-card.com
 export class CareRecordListPage implements OnInit {
   private readonly careRecordService = inject(CareRecordService);
   private readonly fb = inject(FormBuilder);
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   readonly records = signal<CareRecord[]>([]);
   readonly loading = signal(true);
@@ -41,6 +43,7 @@ export class CareRecordListPage implements OnInit {
   });
 
   ngOnInit(): void {
+    this.restoreFiltersFromUrl();
     this.loadRecords();
   }
 
@@ -66,6 +69,7 @@ export class CareRecordListPage implements OnInit {
   }
 
   applyFilters(): void {
+    this.syncFiltersToUrl();
     this.loadRecords();
   }
 
@@ -78,6 +82,7 @@ export class CareRecordListPage implements OnInit {
       fromDate: '',
       toDate: '',
     });
+    this.syncFiltersToUrl();
     this.loadRecords();
   }
 
@@ -115,6 +120,36 @@ export class CareRecordListPage implements OnInit {
     }
 
     return active;
+  }
+
+  private restoreFiltersFromUrl(): void {
+    const params = this.route.snapshot.queryParamMap;
+
+    this.filterForm.patchValue({
+      petName: params.get('petName') ?? '',
+      status: (params.get('status') as CareRecordStatus | null) ?? '',
+      careType: (params.get('careType') as CareRecordCareType | null) ?? '',
+      dateFilter: (params.get('dateFilter') as '' | 'NEXT_7_DAYS' | 'THIS_MONTH' | 'RANGE' | null) ?? '',
+      fromDate: params.get('fromDate') ?? '',
+      toDate: params.get('toDate') ?? '',
+    });
+  }
+
+  private syncFiltersToUrl(): void {
+    const value = this.filterForm.getRawValue();
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: {
+        petName: value.petName || null,
+        status: value.status || null,
+        careType: value.careType || null,
+        dateFilter: value.dateFilter || null,
+        fromDate: value.dateFilter === 'RANGE' ? value.fromDate || null : null,
+        toDate: value.dateFilter === 'RANGE' ? value.toDate || null : null,
+      },
+      replaceUrl: true,
+    });
   }
 
   private buildFilters(): CareRecordFilters {
