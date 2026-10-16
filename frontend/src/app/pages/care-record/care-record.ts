@@ -94,7 +94,7 @@ export class CareRecord {
           }
 
           this.successMessage.set('Cuidado registrado correctamente');
-          this.form.reset();
+          this.router.navigate(['/cuidados']);
         },
         error: () => {
           this.errorMessage.set(
