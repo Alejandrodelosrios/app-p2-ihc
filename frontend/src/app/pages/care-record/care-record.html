@@ -38,9 +38,9 @@
     <app-form-field
       fieldId="animal-type"
       label="Tipo de animal"
-      placeholder="Ej. Perro"
-      autocomplete="off"
+      placeholder="Selecciona un tipo"
       [control]="form.controls.animalType"
+      [options]="animalTypes"
       [error]="animalTypeError()"
     />
 
@@ -79,16 +79,14 @@
     }
 
     <div class="care-form__actions">
-      @if (editing) {
-        <app-button
-          type="button"
-          variant="secondary"
-          [disabled]="loading()"
-          (click)="cancel()"
-        >
-          Cancelar
-        </app-button>
-      }
+      <app-button
+        type="button"
+        variant="secondary"
+        [disabled]="loading()"
+        (click)="cancel()"
+      >
+        Cancelar
+      </app-button>
 
       <app-button
         type="submit"

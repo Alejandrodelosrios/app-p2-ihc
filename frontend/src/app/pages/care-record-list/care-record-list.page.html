@@ -25,26 +25,6 @@
       </label>
 
       <label class="filter-field">
-        <span>Estado</span>
-        <select formControlName="status">
-          <option value="">Todos</option>
-          <option value="PENDING">Pendiente</option>
-          <option value="COMPLETED">Realizado</option>
-        </select>
-      </label>
-
-      <label class="filter-field">
-        <span>Tipo</span>
-        <select formControlName="careType">
-          <option value="">Todos</option>
-          <option value="VACCINE">Vacuna</option>
-          <option value="MEDICATION">Medicamento</option>
-          <option value="CONTROL">Control</option>
-          <option value="OTHER">Otro</option>
-        </select>
-      </label>
-
-      <label class="filter-field">
         <span>Fecha</span>
         <select formControlName="dateFilter">
           <option value="">Cualquier fecha</option>
@@ -54,6 +34,30 @@
         </select>
       </label>
     </div>
+
+    @if (showMoreFilters()) {
+      <div class="filters__grid">
+        <label class="filter-field">
+          <span>Estado</span>
+          <select formControlName="status">
+            <option value="">Todos</option>
+            <option value="PENDING">Pendiente</option>
+            <option value="COMPLETED">Realizado</option>
+          </select>
+        </label>
+
+        <label class="filter-field">
+          <span>Tipo</span>
+          <select formControlName="careType">
+            <option value="">Todos</option>
+            <option value="VACCINE">Vacuna</option>
+            <option value="MEDICATION">Medicamento</option>
+            <option value="CONTROL">Control</option>
+            <option value="OTHER">Otro</option>
+          </select>
+        </label>
+      </div>
+    }
 
     @if (filterForm.controls.dateFilter.value === 'RANGE') {
       <div class="filters__range">
@@ -70,6 +74,9 @@
     }
 
     <div class="filters__actions">
+      <button class="clear-filter-button" type="button" (click)="toggleMoreFilters()">
+        {{ showMoreFilters() ? 'Mostrar menos' : 'Mostrar más' }}
+      </button>
       <button class="filter-button" type="submit">Aplicar filtros</button>
       @if (hasActiveFilters()) {
         <button class="clear-filter-button" type="button" (click)="clearFilters()">

@@ -32,6 +32,7 @@ export class CareRecordListPage implements OnInit {
   readonly statusErrorMessage = signal('');
   readonly completingId = signal<string | null>(null);
   readonly deletingId = signal<string | null>(null);
+  readonly showMoreFilters = signal(false);
 
   readonly filterForm = this.fb.group({
     petName: this.fb.nonNullable.control(''),
@@ -44,6 +45,8 @@ export class CareRecordListPage implements OnInit {
 
   ngOnInit(): void {
     this.restoreFiltersFromUrl();
+    const filters = this.filterForm.getRawValue();
+    this.showMoreFilters.set(!!filters.status || !!filters.careType);
     this.loadRecords();
   }
 
@@ -71,6 +74,10 @@ export class CareRecordListPage implements OnInit {
   applyFilters(): void {
     this.syncFiltersToUrl();
     this.loadRecords();
+  }
+
+  toggleMoreFilters(): void {
+    this.showMoreFilters.update((visible) => !visible);
   }
 
   clearFilters(): void {
