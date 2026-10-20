@@ -8,17 +8,32 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
   template: `
     <label class="field">
       <span class="field__label">{{ label() }}</span>
-      <input
-        class="field__input"
-        [class.field__input--error]="error()"
-        [type]="type()"
-        [formControl]="control()"
-        [attr.autocomplete]="autocomplete()"
-        [attr.placeholder]="placeholder()"
-        [attr.min]="min() || null"
-        [attr.aria-invalid]="!!error()"
-        [attr.aria-describedby]="error() ? fieldId() + '-error' : null"
-      />
+      @if (options().length > 0) {
+        <select
+          class="field__input"
+          [class.field__input--error]="error()"
+          [formControl]="control()"
+          [attr.aria-invalid]="!!error()"
+          [attr.aria-describedby]="error() ? fieldId() + '-error' : null"
+        >
+          <option value="" disabled>{{ placeholder() }}</option>
+          @for (option of options(); track option) {
+            <option [value]="option">{{ option }}</option>
+          }
+        </select>
+      } @else {
+        <input
+          class="field__input"
+          [class.field__input--error]="error()"
+          [type]="type()"
+          [formControl]="control()"
+          [attr.autocomplete]="autocomplete()"
+          [attr.placeholder]="placeholder()"
+          [attr.min]="min() || null"
+          [attr.aria-invalid]="!!error()"
+          [attr.aria-describedby]="error() ? fieldId() + '-error' : null"
+        />
+      }
       @if (error()) {
         <span class="field__error" [id]="fieldId() + '-error'">{{ error() }}</span>
       }
@@ -34,5 +49,6 @@ export class FormFieldComponent {
   readonly autocomplete = input('');
   readonly placeholder = input('');
   readonly min = input('');
+  readonly options = input<readonly string[]>([]);
   readonly error = input<string | null>(null);
 }

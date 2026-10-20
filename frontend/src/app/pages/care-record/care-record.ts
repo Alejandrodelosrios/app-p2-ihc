@@ -33,6 +33,7 @@ export class CareRecord {
   readonly editing = this.editId !== null;
   private readonly currentDate = new Date();
   readonly today = `${this.currentDate.getFullYear()}-${String(this.currentDate.getMonth() + 1).padStart(2, '0')}-${String(this.currentDate.getDate()).padStart(2, '0')}`;
+  readonly animalTypes = ['Perro', 'Gato', 'Loro', 'Conejo', 'Hámster', 'Pez', 'Tortuga', 'Otro'];
 
   readonly form = this.fb.nonNullable.group({
     petName: ['', Validators.required],
@@ -45,6 +46,10 @@ export class CareRecord {
     const record = history.state['record'] as CareRecordModel | undefined;
 
     if (this.editing && record) {
+      if (!this.animalTypes.includes(record.animalType)) {
+        this.animalTypes.push(record.animalType);
+      }
+
       this.form.patchValue({
         petName: record.petName,
         care: record.care,
@@ -94,7 +99,7 @@ export class CareRecord {
           }
 
           this.successMessage.set('Cuidado registrado correctamente');
-          this.form.reset();
+          this.router.navigate(['/cuidados']);
         },
         error: () => {
           this.errorMessage.set(
