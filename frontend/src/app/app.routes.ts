@@ -85,6 +85,14 @@ export const routes: Routes = [
       },
 
       {
+        path: 'historial',
+        loadComponent: () =>
+          import('./pages/care-history/care-history.page').then(
+            (m) => m.CareHistoryPage,
+          ),
+      },
+
+      {
         path: 'cambiar-contrasena',
         loadComponent: () =>
           import('./pages/change-password/change-password.page').then(

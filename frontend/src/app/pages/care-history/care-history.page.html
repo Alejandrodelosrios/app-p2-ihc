@@ -1,0 +1,56 @@
+<section class="history-page">
+  <header>
+    <p class="eyebrow">Historial</p>
+    <h1>Actividad de cuidados</h1>
+    <p>Revisa los cuidados realizados y reprogramados.</p>
+  </header>
+
+  @if (loading()) {
+    <div class="history-state">
+      <app-icon name="progress_activity" [size]="32" />
+      <p>Cargando historial...</p>
+    </div>
+  } @else if (errorMessage()) {
+    <div class="history-state">
+      <app-icon name="error" [size]="32" />
+      <p>{{ errorMessage() }}</p>
+      <button type="button" (click)="loadHistory()">Reintentar</button>
+    </div>
+  } @else if (entries().length === 0) {
+    <div class="history-state">
+      <app-icon name="history" [size]="40" />
+      <h2>Aún no hay actividad</h2>
+      <p>Cuando realices o reprogrames un cuidado, aparecerá aquí.</p>
+      <a routerLink="/cuidados">Ver cuidados</a>
+    </div>
+  } @else {
+    <div class="history-list">
+      @for (entry of entries(); track entry.id) {
+        <article class="history-card">
+          <div class="history-card__title">
+            <app-icon [name]="entry.action === 'COMPLETED' ? 'check_circle' : 'event_repeat'" [size]="24" />
+            <div>
+              <strong>{{ entry.action === 'COMPLETED' ? 'Realizado' : 'Reprogramado' }}</strong>
+              <span>{{ entry.petName }}</span>
+            </div>
+          </div>
+
+          <p>{{ entry.care }}</p>
+
+          @if (entry.action === 'RESCHEDULED') {
+            <p class="history-card__result">
+              {{ entry.previousCareDate | date:'dd/MM/yyyy':'UTC' }} →
+              {{ entry.currentCareDate | date:'dd/MM/yyyy':'UTC' }}
+            </p>
+          } @else {
+            <p class="history-card__result">
+              Fecha del cuidado: {{ entry.currentCareDate | date:'dd/MM/yyyy':'UTC' }}
+            </p>
+          }
+
+          <time>{{ entry.occurredAt | date:'dd/MM/yyyy HH:mm' }}</time>
+        </article>
+      }
+    </div>
+  }
+</section>
