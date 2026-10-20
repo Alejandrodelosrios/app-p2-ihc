@@ -4,6 +4,9 @@ import com.ihc.mascotas.backend.care.domain.CareHistoryEntry;
 import com.ihc.mascotas.backend.care.domain.CareHistoryRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
+import java.util.UUID;
+
 @Repository
 public class JpaCareHistoryRepositoryAdapter implements CareHistoryRepository {
     private final SpringDataCareHistoryRepository repository;
@@ -15,6 +18,14 @@ public class JpaCareHistoryRepositoryAdapter implements CareHistoryRepository {
     @Override
     public CareHistoryEntry save(CareHistoryEntry entry) {
         return toDomain(repository.save(toEntity(entry)));
+    }
+
+    @Override
+    public List<CareHistoryEntry> findByUserIdOrderByOccurredAtDesc(UUID userId) {
+        return repository.findByUserIdOrderByOccurredAtDesc(userId)
+                .stream()
+                .map(this::toDomain)
+                .toList();
     }
 
     private CareHistoryJpaEntity toEntity(CareHistoryEntry entry) {
