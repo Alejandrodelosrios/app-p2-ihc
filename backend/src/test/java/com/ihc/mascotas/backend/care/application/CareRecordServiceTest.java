@@ -2,6 +2,8 @@ package com.ihc.mascotas.backend.care.application;
 
 import com.ihc.mascotas.backend.auth.domain.User;
 import com.ihc.mascotas.backend.auth.domain.UserRepository;
+import com.ihc.mascotas.backend.care.domain.CareHistoryAction;
+import com.ihc.mascotas.backend.care.domain.CareHistoryEntry;
 import com.ihc.mascotas.backend.care.domain.CareHistoryRepository;
 import com.ihc.mascotas.backend.care.domain.CareRecord;
 import com.ihc.mascotas.backend.care.domain.CareRecordRepository;
@@ -10,6 +12,7 @@ import com.ihc.mascotas.backend.shared.exception.ConflictException;
 import com.ihc.mascotas.backend.shared.exception.NotAllowedException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -184,6 +187,50 @@ class CareRecordServiceTest {
         );
 
         assertEquals(List.of(), records);
+    }
+
+    @Test
+    void completingCareCreatesHistoryEntry() {
+        User user = user();
+        CareRecord pending = record(user.id(), CareRecordStatus.PENDING);
+        when(users.findByEmail(user.email())).thenReturn(Optional.of(user));
+        when(careRecords.findById(pending.id())).thenReturn(Optional.of(pending));
+        when(careRecords.save(any(CareRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.complete(user.email(), pending.id());
+
+        ArgumentCaptor<CareHistoryEntry> captor = ArgumentCaptor.forClass(CareHistoryEntry.class);
+        verify(history).save(captor.capture());
+        CareHistoryEntry entry = captor.getValue();
+        assertEquals(CareHistoryAction.COMPLETED, entry.action());
+        assertEquals(pending.id(), entry.careRecordId());
+        assertEquals(pending.careDate(), entry.currentCareDate());
+    }
+
+    @Test
+    void reschedulingCareCreatesHistoryEntry() {
+        User user = user();
+        CareRecord pending = record(user.id(), CareRecordStatus.PENDING);
+        LocalDate newDate = LocalDate.now().plusDays(1);
+        when(users.findByEmail(user.email())).thenReturn(Optional.of(user));
+        when(careRecords.findById(pending.id())).thenReturn(Optional.of(pending));
+        when(careRecords.save(any(CareRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        service.update(
+                user.email(),
+                pending.id(),
+                pending.petName(),
+                pending.care(),
+                pending.animalType(),
+                newDate
+        );
+
+        ArgumentCaptor<CareHistoryEntry> captor = ArgumentCaptor.forClass(CareHistoryEntry.class);
+        verify(history).save(captor.capture());
+        CareHistoryEntry entry = captor.getValue();
+        assertEquals(CareHistoryAction.RESCHEDULED, entry.action());
+        assertEquals(pending.careDate(), entry.previousCareDate());
+        assertEquals(newDate, entry.currentCareDate());
     }
 
     @Test
