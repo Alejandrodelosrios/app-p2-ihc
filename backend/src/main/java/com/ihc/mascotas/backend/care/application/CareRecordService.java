@@ -2,6 +2,9 @@ package com.ihc.mascotas.backend.care.application;
 
 import com.ihc.mascotas.backend.auth.domain.User;
 import com.ihc.mascotas.backend.auth.domain.UserRepository;
+import com.ihc.mascotas.backend.care.domain.CareHistoryAction;
+import com.ihc.mascotas.backend.care.domain.CareHistoryEntry;
+import com.ihc.mascotas.backend.care.domain.CareHistoryRepository;
 import com.ihc.mascotas.backend.care.domain.CareRecord;
 import com.ihc.mascotas.backend.care.domain.CareRecordRepository;
 import com.ihc.mascotas.backend.care.domain.CareRecordStatus;
@@ -10,6 +13,7 @@ import com.ihc.mascotas.backend.shared.exception.ForbiddenException;
 import com.ihc.mascotas.backend.shared.exception.NotAllowedException;
 import com.ihc.mascotas.backend.shared.exception.NotFoundException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -19,10 +23,16 @@ import java.util.UUID;
 @Service
 public class CareRecordService {
     private final CareRecordRepository careRecordRepository;
+    private final CareHistoryRepository careHistoryRepository;
     private final UserRepository userRepository;
 
-    public CareRecordService(CareRecordRepository careRecordRepository, UserRepository userRepository) {
+    public CareRecordService(
+            CareRecordRepository careRecordRepository,
+            CareHistoryRepository careHistoryRepository,
+            UserRepository userRepository
+    ) {
         this.careRecordRepository = careRecordRepository;
+        this.careHistoryRepository = careHistoryRepository;
         this.userRepository = userRepository;
     }
 
@@ -75,6 +85,7 @@ public class CareRecordService {
         );
     }
 
+    @Transactional
     public CareRecord complete(String email, UUID id) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -98,9 +109,22 @@ public class CareRecordService {
                 CareRecordStatus.COMPLETED
         );
 
-        return careRecordRepository.save(completed);
+        CareRecord saved = careRecordRepository.save(completed);
+        careHistoryRepository.save(new CareHistoryEntry(
+                UUID.randomUUID(),
+                record.userId(),
+                record.id(),
+                record.petName(),
+                record.care(),
+                CareHistoryAction.COMPLETED,
+                null,
+                record.careDate(),
+                Instant.now()
+        ));
+        return saved;
     }
 
+    @Transactional
     public CareRecord update(
             String email,
             UUID id,
@@ -137,7 +161,23 @@ public class CareRecordService {
                 record.status()
         );
 
-        return careRecordRepository.save(updated);
+        CareRecord saved = careRecordRepository.save(updated);
+
+        if (dateChanged) {
+            careHistoryRepository.save(new CareHistoryEntry(
+                    UUID.randomUUID(),
+                    record.userId(),
+                    record.id(),
+                    updated.petName(),
+                    updated.care(),
+                    CareHistoryAction.RESCHEDULED,
+                    record.careDate(),
+                    updated.careDate(),
+                    Instant.now()
+            ));
+        }
+
+        return saved;
     }
 
     public void delete(String email, UUID id) {

@@ -2,6 +2,7 @@ package com.ihc.mascotas.backend.care.application;
 
 import com.ihc.mascotas.backend.auth.domain.User;
 import com.ihc.mascotas.backend.auth.domain.UserRepository;
+import com.ihc.mascotas.backend.care.domain.CareHistoryRepository;
 import com.ihc.mascotas.backend.care.domain.CareRecord;
 import com.ihc.mascotas.backend.care.domain.CareRecordRepository;
 import com.ihc.mascotas.backend.care.domain.CareRecordStatus;
@@ -24,13 +25,14 @@ import static org.mockito.Mockito.*;
 class CareRecordServiceTest {
 
     private final CareRecordRepository careRecords = mock(CareRecordRepository.class);
+    private final CareHistoryRepository history = mock(CareHistoryRepository.class);
     private final UserRepository users = mock(UserRepository.class);
     private CareRecordService service;
 
     @BeforeEach
     void setUp() {
-        reset(careRecords, users);
-        service = new CareRecordService(careRecords, users);
+        reset(careRecords, history, users);
+        service = new CareRecordService(careRecords, history, users);
     }
 
     @Test
