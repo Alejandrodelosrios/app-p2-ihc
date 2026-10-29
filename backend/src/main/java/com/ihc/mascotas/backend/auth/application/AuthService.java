@@ -2,6 +2,7 @@ package com.ihc.mascotas.backend.auth.application;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -67,6 +68,29 @@ public class AuthService {
     @Transactional(readOnly = true)
     public UserView currentUser(String email) {
         return users.findByEmail(normalizeEmail(email))
+                .map(AuthService::toView)
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+    }
+
+    @Transactional(readOnly = true)
+    public List<UserView> searchUsersByEmail(String currentEmail, String emailPrefix) {
+        String prefix = normalizeEmail(emailPrefix == null ? "" : emailPrefix);
+        if (prefix.length() < 3) {
+            return List.of();
+        }
+
+        User currentUser = users.findByEmail(normalizeEmail(currentEmail))
+                .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
+
+        return users.searchByEmailPrefix(prefix, currentUser.id())
+                .stream()
+                .map(AuthService::toView)
+                .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public UserView findPublicUserById(UUID id) {
+        return users.findById(id)
                 .map(AuthService::toView)
                 .orElseThrow(() -> new NotFoundException("Usuario no encontrado"));
     }

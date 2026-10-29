@@ -1,5 +1,6 @@
 package com.ihc.mascotas.backend.auth.infrastructure.persistence;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -30,6 +31,15 @@ class JpaUserRepositoryAdapter implements UserRepository {
     @Override
     public Optional<User> findById(UUID id) {
         return repository.findById(id).map(JpaUserRepositoryAdapter::toDomain);
+    }
+
+    @Override
+    public List<User> searchByEmailPrefix(String emailPrefix, UUID excludedUserId) {
+        return repository.findTop10ByEmailStartingWithIgnoreCaseAndIdNotOrderByEmailAsc(
+                        emailPrefix, excludedUserId)
+                .stream()
+                .map(JpaUserRepositoryAdapter::toDomain)
+                .toList();
     }
 
     @Override

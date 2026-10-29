@@ -3,6 +3,7 @@ package com.ihc.mascotas.backend.auth.presentation;
 import java.security.Principal;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.Valid;
@@ -13,6 +14,8 @@ import jakarta.validation.constraints.Size;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseStatus;
@@ -47,6 +50,19 @@ public class AuthController {
     @GetMapping("/me")
     public UserResponse me(Principal principal) {
         return toResponse(authService.currentUser(principal.getName()));
+    }
+
+    @GetMapping("/users/search")
+    public List<UserResponse>searchUsers(Principal principal, @RequestParam String email){
+        return authService.searchUsersByEmail(principal.getName(), email)
+        .stream()
+        .map(AuthController::toResponse)
+        .toList();
+    }
+
+    @GetMapping("/users/{id}")
+    public UserResponse findUser(@PathVariable UUID id) {
+        return toResponse(authService.findPublicUserById(id));
     }
 
     @PostMapping("/password-reset/request")
