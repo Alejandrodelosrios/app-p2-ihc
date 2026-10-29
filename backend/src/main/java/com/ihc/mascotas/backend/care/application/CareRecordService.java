@@ -18,7 +18,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
+import java.util.Locale;
 
 @Service
 public class CareRecordService {
@@ -41,11 +43,13 @@ public class CareRecordService {
             String petName,
             String care,
             String animalType,
-            LocalDate careDate
+            LocalDate careDate,
+            String assigneeEmail
     ) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
+        UUID assigneeId = resolveAssigneeId(assigneeEmail);
         CareRecord record = new CareRecord(
                 UUID.randomUUID(),
                 user.id(),
@@ -54,10 +58,21 @@ public class CareRecordService {
                 animalType,
                 careDate,
                 Instant.now(),
-                CareRecordStatus.PENDING
+                CareRecordStatus.PENDING,
+                assigneeId
         );
 
         return careRecordRepository.save(record);
+    }
+
+    public CareRecord create(
+            String email,
+            String petName,
+            String care,
+            String animalType,
+            LocalDate careDate
+    ) {
+        return create(email, petName, care, animalType, careDate, null);
     }
 
     public List<CareRecord> findByUserEmail(String email) {
@@ -91,8 +106,8 @@ public class CareRecordService {
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
         CareRecord record = careRecordRepository.findById(id)
-                .filter(careRecord -> careRecord.userId().equals(user.id()))
-                .orElseThrow(() -> new ForbiddenException("Cuidado no encontrado"));
+                .filter(careRecord -> isOwnerOrAssignee(careRecord, user.id()))
+                .orElseThrow(() -> new ForbiddenException("No tienes permiso para completar este cuidado"));
 
         if (record.status() == CareRecordStatus.COMPLETED) {
             throw new ConflictException("El cuidado ya fue realizado");
@@ -106,13 +121,14 @@ public class CareRecordService {
                 record.animalType(),
                 record.careDate(),
                 record.createdAt(),
-                CareRecordStatus.COMPLETED
+                CareRecordStatus.COMPLETED,
+                record.assignedToUserId()
         );
 
         CareRecord saved = careRecordRepository.save(completed);
         careHistoryRepository.save(new CareHistoryEntry(
                 UUID.randomUUID(),
-                record.userId(),
+                user.id(),
                 record.id(),
                 record.petName(),
                 record.care(),
@@ -131,7 +147,8 @@ public class CareRecordService {
             String petName,
             String care,
             String animalType,
-            LocalDate careDate
+            LocalDate careDate,
+            String assigneeEmail
     ) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -150,15 +167,18 @@ public class CareRecordService {
             throw new NotAllowedException("La nueva fecha no puede ser anterior a hoy");
         }
 
+        UUID assigneeId = resolveAssigneeId(assigneeEmail);
+
         CareRecord updated = new CareRecord(
                 record.id(),
-                record.userId(),
+                user.id(),
                 petName,
                 care,
                 animalType,
                 careDate,
                 record.createdAt(),
-                record.status()
+                record.status(),
+                assigneeId
         );
 
         CareRecord saved = careRecordRepository.save(updated);
@@ -166,7 +186,7 @@ public class CareRecordService {
         if (dateChanged) {
             careHistoryRepository.save(new CareHistoryEntry(
                     UUID.randomUUID(),
-                    record.userId(),
+                    user.id(),
                     record.id(),
                     updated.petName(),
                     updated.care(),
@@ -180,6 +200,17 @@ public class CareRecordService {
         return saved;
     }
 
+    public CareRecord update(
+            String email,
+            UUID id,
+            String petName,
+            String care,
+            String animalType,
+            LocalDate careDate
+    ) {
+        return update(email, id, petName, care, animalType, careDate, null);
+    }
+
     public void delete(String email, UUID id) {
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
@@ -189,5 +220,20 @@ public class CareRecordService {
                 .orElseThrow(() -> new NotFoundException("Cuidado no encontrado"));
 
         careRecordRepository.deleteById(record.id());
+    }
+
+    private UUID resolveAssigneeId(String assigneeEmail) {
+        if (assigneeEmail == null || assigneeEmail.isBlank()) {
+            return null;
+        }
+
+        return userRepository.findByEmail(assigneeEmail.trim().toLowerCase(Locale.ROOT))
+                .orElseThrow(() -> new NotFoundException("Usuario asignado no encontrado"))
+                .id();
+    }
+
+    private boolean isOwnerOrAssignee(CareRecord record, UUID userId) {
+        return record.userId().equals(userId)
+                || Objects.equals(record.assignedToUserId(), userId);
     }
 }

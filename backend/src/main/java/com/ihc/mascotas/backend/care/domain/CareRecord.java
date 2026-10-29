@@ -11,6 +11,8 @@ public record CareRecord(UUID id,
                          String animalType,
                          LocalDate careDate,
                          Instant createdAt,
-                         CareRecordStatus status) {
+                         CareRecordStatus status,
+                         UUID assignedToUserId
+                        ) {
 
 }

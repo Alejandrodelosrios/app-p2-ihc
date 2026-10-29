@@ -16,8 +16,9 @@ public interface SpringDataCareRecordRepository extends JpaRepository<CareRecord
     @Query("""
             SELECT record
             FROM CareRecordJpaEntity record
-            WHERE record.userId = :userId
-            AND (:petName = '' OR LOWER(record.petName) LIKE LOWER(CONCAT('%', :petName, '%')))              AND (:status IS NULL OR record.status = :status)
+            WHERE (record.userId = :userId OR record.assignedToUserId = :userId)
+              AND (:petName = '' OR LOWER(record.petName) LIKE LOWER(CONCAT('%', :petName, '%')))
+              AND (:status IS NULL OR record.status = :status)
               AND (
                     :careType = ''
                     OR (:careType = 'VACCINE' AND LOWER(record.care) LIKE '%vacuna%')

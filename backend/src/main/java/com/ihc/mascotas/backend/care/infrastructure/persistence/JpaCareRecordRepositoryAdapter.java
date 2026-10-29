@@ -74,7 +74,9 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
                 careRecord.animalType(),
                 careRecord.careDate(),
                 careRecord.createdAt(),
-                careRecord.status());
+                careRecord.status(),
+                careRecord.assignedToUserId()
+            );
     }
 
     private CareRecord toDomain(CareRecordJpaEntity careRecord) {
@@ -86,6 +88,8 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
                 careRecord.getAnimalType(),
                 careRecord.getCareDate(),
                 careRecord.getCreatedAt(),
-                careRecord.getStatus());
+                careRecord.getStatus(),
+                careRecord.getAssignedToUserId()
+            );
     }
 }

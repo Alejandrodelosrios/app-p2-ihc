@@ -36,7 +36,8 @@ public class CareRecordController {
                 request.petName(),
                 request.care(),
                 request.animalType(),
-                request.careDate()
+                request.careDate(),
+                request.assigneeEmail()
         );
     }
 
@@ -78,7 +79,8 @@ public class CareRecordController {
                 request.petName(),
                 request.care(),
                 request.animalType(),
-                request.careDate()
+                request.careDate(),
+                request.assigneeEmail()
         );
     }
 

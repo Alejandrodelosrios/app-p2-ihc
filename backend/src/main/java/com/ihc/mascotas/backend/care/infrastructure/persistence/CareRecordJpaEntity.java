@@ -39,9 +39,12 @@ public class CareRecordJpaEntity {
     @Column(name = "status", nullable = false)
     private CareRecordStatus status;
 
+    @Column(name="assigned_to_user_id")
+    private UUID assignedToUserId;
+
     protected CareRecordJpaEntity() {}
 
-    public CareRecordJpaEntity(UUID id, UUID userId, String petName, String care, String animalType, LocalDate careDate, Instant createdAt, CareRecordStatus status) {
+    public CareRecordJpaEntity(UUID id, UUID userId, String petName, String care, String animalType, LocalDate careDate, Instant createdAt, CareRecordStatus status, UUID assignedToUserId ) {
         this.id = id;
         this.userId = userId;
         this.petName = petName;
@@ -50,6 +53,7 @@ public class CareRecordJpaEntity {
         this.careDate = careDate;
         this.createdAt = createdAt;
         this.status = status;
+        this.assignedToUserId = assignedToUserId;
     }
 
     public UUID getId() {
@@ -82,5 +86,9 @@ public class CareRecordJpaEntity {
 
     public CareRecordStatus getStatus() {
         return status;
+    }
+    
+    public UUID getAssignedToUserId(){
+        return assignedToUserId;
     }
 }
