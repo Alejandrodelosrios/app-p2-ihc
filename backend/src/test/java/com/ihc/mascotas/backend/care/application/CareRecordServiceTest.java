@@ -9,7 +9,9 @@ import com.ihc.mascotas.backend.care.domain.CareRecord;
 import com.ihc.mascotas.backend.care.domain.CareRecordRepository;
 import com.ihc.mascotas.backend.care.domain.CareRecordStatus;
 import com.ihc.mascotas.backend.shared.exception.ConflictException;
+import com.ihc.mascotas.backend.shared.exception.ForbiddenException;
 import com.ihc.mascotas.backend.shared.exception.NotAllowedException;
+import com.ihc.mascotas.backend.shared.exception.NotFoundException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -21,6 +23,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
@@ -61,6 +64,68 @@ class CareRecordServiceTest {
 
         assertEquals(CareRecordStatus.COMPLETED, completed.status());
         verify(careRecords).save(completed);
+    }
+
+    @Test
+    void assignedUserCanCompleteCareAndBeRecordedAsActor() {
+        User owner = user();
+        User assignee = new User(
+                UUID.fromString("6f8b4e1f-0d31-4c7e-9af7-6a6d9d4c8f20"),
+                "Luis",
+                "luis@example.com",
+                "hash",
+                owner.createdAt(),
+                owner.updatedAt()
+        );
+        CareRecord pending = new CareRecord(
+                UUID.randomUUID(),
+                owner.id(),
+                "Milo",
+                "Vacuna",
+                "Perro",
+                LocalDate.of(2026, 10, 8),
+                owner.createdAt(),
+                CareRecordStatus.PENDING,
+                assignee.id()
+        );
+        when(users.findByEmail(assignee.email())).thenReturn(Optional.of(assignee));
+        when(careRecords.findById(pending.id())).thenReturn(Optional.of(pending));
+        when(careRecords.save(any(CareRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CareRecord completed = service.complete(assignee.email(), pending.id());
+
+        assertEquals(owner.id(), completed.userId());
+        assertEquals(assignee.id(), completed.assignedToUserId());
+        ArgumentCaptor<CareHistoryEntry> captor = ArgumentCaptor.forClass(CareHistoryEntry.class);
+        verify(history).save(captor.capture());
+        assertEquals(assignee.id(), captor.getValue().userId());
+    }
+
+    @Test
+    void createResolvesOptionalAssigneeByEmail() {
+        User owner = user();
+        User assignee = new User(
+                UUID.fromString("6f8b4e1f-0d31-4c7e-9af7-6a6d9d4c8f20"),
+                "Luis",
+                "luis@example.com",
+                "hash",
+                owner.createdAt(),
+                owner.updatedAt()
+        );
+        when(users.findByEmail(owner.email())).thenReturn(Optional.of(owner));
+        when(users.findByEmail(assignee.email())).thenReturn(Optional.of(assignee));
+        when(careRecords.save(any(CareRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CareRecord created = service.create(
+                owner.email(),
+                "Milo",
+                "Vacuna",
+                "Perro",
+                LocalDate.of(2026, 10, 8),
+                assignee.email()
+        );
+
+        assertEquals(assignee.id(), created.assignedToUserId());
     }
 
     @Test
@@ -285,6 +350,99 @@ class CareRecordServiceTest {
         verify(careRecords, never()).save(any());
     }
 
+    @Test
+    void createWithoutAssigneeLeavesItEmpty(){
+        User owner = user();
+        when(users.findByEmail(owner.email())).thenReturn(Optional.of(owner));
+        when(careRecords.save(any(CareRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+ 
+        CareRecord withNull = service.create(owner.email(), "Milo", "Vacuna", "Perro", LocalDate.of(2026, 10, 8), null);
+        CareRecord withBlank = service.create(owner.email(), "Milo", "Vacuna", "Perro", LocalDate.of(2026, 10, 8), "   ");
+ 
+        assertNull(withNull.assignedToUserId());
+        assertNull(withBlank.assignedToUserId());
+    }
+
+    @Test
+    void createWithUnknownAssigneeFails() {
+        User owner =user();
+        when(users.findByEmail(owner.email())).thenReturn(Optional.of(owner));
+        when(users.findByEmail("nadie@example.com")).thenReturn(Optional.empty());
+ 
+        assertThrows(
+                NotFoundException.class,
+                () -> service.create(owner.email(), "Milo", "Vacuna", "Perro",
+                        LocalDate.of(2026, 10, 8), "nadie@example.com")
+        );
+ 
+        verify(careRecords, never()).save(any());
+    }
+
+    @Test
+    void strangerCannotCompleteCare() {
+        User owner = user();
+        User stranger = stranger();
+        CareRecord pending = record(owner.id(), assignee().id(), CareRecordStatus.PENDING);
+        when(users.findByEmail(stranger.email())).thenReturn(Optional.of(stranger));
+        when(careRecords.findById(pending.id())).thenReturn(Optional.of(pending));
+ 
+        assertThrows(ForbiddenException.class, () -> service.complete(stranger.email(), pending.id()));
+ 
+        verify(careRecords, never()).save(any());
+        verify(history, never()).save(any());
+    }
+ 
+    @Test
+    void assigneeCannotUpdateCare() {
+        User owner = user();
+        User assignee = assignee();
+        CareRecord assigned = record(owner.id(), assignee.id(), CareRecordStatus.PENDING);
+        when(users.findByEmail(assignee.email())).thenReturn(Optional.of(assignee));
+        when(careRecords.findById(assigned.id())).thenReturn(Optional.of(assigned));
+ 
+        assertThrows(
+                NotFoundException.class,
+                () -> service.update(assignee.email(), assigned.id(), "Otro", "Control", "Gato",
+                        LocalDate.now().plusDays(3), null)
+        );
+ 
+        verify(careRecords, never()).save(any());
+    }
+ 
+    @Test
+    void assigneeCannotDeleteCare() {
+        User owner = user();
+        User assignee = assignee();
+        CareRecord assigned = record(owner.id(), assignee.id(), CareRecordStatus.PENDING);
+        when(users.findByEmail(assignee.email())).thenReturn(Optional.of(assignee));
+        when(careRecords.findById(assigned.id())).thenReturn(Optional.of(assigned));
+ 
+        assertThrows(NotFoundException.class, () -> service.delete(assignee.email(), assigned.id()));
+ 
+        verify(careRecords, never()).deleteById(any());
+    }
+ 
+    @Test
+    void ownerCanChangeAndRemoveAssigneeOnUpdate() {
+        User owner = user();
+        User assignee = assignee();
+        CareRecord pending = record(owner.id(), CareRecordStatus.PENDING);
+        when(users.findByEmail(owner.email())).thenReturn(Optional.of(owner));
+        when(users.findByEmail(assignee.email())).thenReturn(Optional.of(assignee));
+        when(careRecords.findById(pending.id())).thenReturn(Optional.of(pending));
+        when(careRecords.save(any(CareRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+ 
+        CareRecord assigned = service.update(owner.email(), pending.id(), pending.petName(), pending.care(),
+                pending.animalType(), pending.careDate(), assignee.email());
+        CareRecord cleared = service.update(owner.email(), pending.id(), pending.petName(), pending.care(),
+                pending.animalType(), pending.careDate(), null);
+ 
+        assertEquals(assignee.id(), assigned.assignedToUserId());
+        assertNull(cleared.assignedToUserId());
+        // cambiar solo el responsable no es reprogramar: no hay historial
+        verify(history, never()).save(any());
+    }
+
     private static User user() {
         Instant now = Instant.parse("2026-10-08T00:00:00Z");
         return new User(
@@ -297,6 +455,29 @@ class CareRecordServiceTest {
         );
     }
 
+    private static User assignee() {
+        Instant now = Instant.parse("2026-10-08T00:00:00Z");
+        return new User(UUID.fromString("6f8b4e1f-0d31-4c7e-9af7-6a6d9d4c8f20"),
+                "Luis", "luis@example.com", "hash", now, now);
+    }
+
+    private static User stranger() {
+        Instant now = Instant.parse("2026-10-08T00:00:00Z");
+        return new User(UUID.fromString("0d9c7f3e-8a12-4b55-b7c1-2e4a5f6b7c88"),
+                "Carla", "carla@example.com", "hash", now, now);
+    }
+
+    private static CareRecord record(UUID userId, UUID assigneeId, CareRecordStatus status) {
+        return new CareRecord(
+                UUID.fromString("383d827e-ea91-4317-b0a9-a55768f759aa"),
+                userId, "Milo", "Vacuna", "Perro",
+                LocalDate.of(2026, 10, 8),
+                Instant.parse("2026-10-08T00:00:00Z"),
+                status,
+                assigneeId
+        );
+    }
+    
     private static CareRecord record(UUID userId, CareRecordStatus status) {
         return new CareRecord(
                 UUID.fromString("383d827e-ea91-4317-b0a9-a55768f759aa"),
@@ -306,7 +487,8 @@ class CareRecordServiceTest {
                 "Perro",
                 LocalDate.of(2026, 10, 8),
                 Instant.parse("2026-10-08T00:00:00Z"),
-                status
+                status,
+                null
         );
     }
 }
