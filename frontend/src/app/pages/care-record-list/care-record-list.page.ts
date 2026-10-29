@@ -1,9 +1,10 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { CareRecordService } from '../../core/care/care-record';
+import { AuthService } from '../../core/auth/auth.service';
 import { CareRecord, CareRecordCareType, CareRecordFilters, CareRecordStatus } from '../../models/care-record.model';
 import { IconComponent } from '../../shared/ui/icon/icon.component';
 import { CareRecordCardComponent } from './care-record-card/care-record-card.component';
@@ -22,11 +23,22 @@ import { CareRecordCardComponent } from './care-record-card/care-record-card.com
 })
 export class CareRecordListPage implements OnInit {
   private readonly careRecordService = inject(CareRecordService);
+  private readonly authService = inject(AuthService);
   private readonly fb = inject(FormBuilder);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
 
   readonly records = signal<CareRecord[]>([]);
+  readonly assignedRecords = computed(() => {
+    const userId = this.authService.user()?.id;
+    return this.records().filter((record) =>
+      !!userId && record.assignedToUserId === userId && record.userId !== userId,
+    );
+  });
+  readonly ownedRecords = computed(() => {
+    const userId = this.authService.user()?.id;
+    return userId ? this.records().filter((record) => record.userId === userId) : this.records();
+  });
   readonly loading = signal(true);
   readonly errorMessage = signal('');
   readonly statusErrorMessage = signal('');

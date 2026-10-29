@@ -135,16 +135,55 @@
       <p class="status-error" role="alert">{{ statusErrorMessage() }}</p>
     }
 
-    <div class="records-list">
-      @for (record of records(); track record.id) {
-        <app-care-record-card
-          [record]="record"
-          [completing]="completingId() === record.id"
-          [deleting]="deletingId() === record.id"
-          (complete)="completeRecord($event)"
-          (remove)="deleteRecord($event)"
-        />
+    <section class="records-section" aria-labelledby="assigned-records-title">
+      <header class="records-section__header">
+        <div>
+          <p class="eyebrow">Responsabilidades recibidas</p>
+          <h2 id="assigned-records-title">Cuidados asignados</h2>
+        </div>
+        <span class="records-section__count">{{ assignedRecords().length }}</span>
+      </header>
+      @if (assignedRecords().length > 0) {
+        <div class="records-list">
+          @for (record of assignedRecords(); track record.id) {
+            <app-care-record-card
+              [record]="record"
+              [assignedToMe]="true"
+              [completing]="completingId() === record.id"
+              [deleting]="deletingId() === record.id"
+              (complete)="completeRecord($event)"
+              (remove)="deleteRecord($event)"
+            />
+          }
+        </div>
+      } @else {
+        <p class="records-section__empty">No tienes cuidados asignados por otras personas.</p>
       }
-    </div>
+    </section>
+
+    <section class="records-section" aria-labelledby="owned-records-title">
+      <header class="records-section__header">
+        <div>
+          <p class="eyebrow">Tu organización</p>
+          <h2 id="owned-records-title">Mis cuidados</h2>
+        </div>
+        <span class="records-section__count">{{ ownedRecords().length }}</span>
+      </header>
+      @if (ownedRecords().length > 0) {
+        <div class="records-list">
+          @for (record of ownedRecords(); track record.id) {
+            <app-care-record-card
+              [record]="record"
+              [completing]="completingId() === record.id"
+              [deleting]="deletingId() === record.id"
+              (complete)="completeRecord($event)"
+              (remove)="deleteRecord($event)"
+            />
+          }
+        </div>
+      } @else {
+        <p class="records-section__empty">Todavía no registraste cuidados propios.</p>
+      }
+    </section>
   }
 </section>

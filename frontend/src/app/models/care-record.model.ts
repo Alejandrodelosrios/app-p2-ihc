@@ -10,6 +10,7 @@ export interface CareRecord {
   careDate: string;
   createdAt: string;
   status: CareRecordStatus;
+  assignedToUserId?: string | null;
 }
 
 export interface CreateCareRecordRequest {
@@ -17,6 +18,7 @@ export interface CreateCareRecordRequest {
   care: string;
   animalType: string;
   careDate: string;
+  assignedToUserId?: string | null;
 }
 export interface CareRecordFilters {
   petName?: string;

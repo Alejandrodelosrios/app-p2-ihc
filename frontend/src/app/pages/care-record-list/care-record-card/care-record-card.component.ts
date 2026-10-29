@@ -15,6 +15,7 @@ export class CareRecordCardComponent {
   readonly record = input.required<CareRecord>();
   readonly completing = input(false);
   readonly deleting = input(false);
+  readonly assignedToMe = input(false);
   readonly complete = output<string>();
   readonly remove = output<string>();
 

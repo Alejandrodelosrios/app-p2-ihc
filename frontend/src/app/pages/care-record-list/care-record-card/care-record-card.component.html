@@ -19,6 +19,11 @@
   <div class="record-card__care">
     <span class="record-card__label">Cuidado</span>
     <p>{{ record().care }}</p>
+    @if (assignedToMe()) {
+      <p class="record-card__assignment"><app-icon name="assignment_ind" [size]="17" /> Te asignaron este cuidado</p>
+    } @else if (record().assignedToUserId) {
+      <p class="record-card__assignment"><app-icon name="group" [size]="17" /> Asignado a otra persona</p>
+    }
   </div>
 
   <div class="record-card__footer">
@@ -31,6 +36,7 @@
     </span>
 
     <div class="record-card__actions">
+      @if (!assignedToMe()) {
       <a
         class="action-button"
         [routerLink]="['/cuidados', record().id, 'editar']"
@@ -50,6 +56,7 @@
       >
         <app-icon [name]="deleting() ? 'progress_activity' : 'delete'" [size]="20" />
       </button>
+      }
 
       <button
         type="button"
