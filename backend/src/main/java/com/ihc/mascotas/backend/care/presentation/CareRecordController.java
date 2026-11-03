@@ -37,7 +37,8 @@ public class CareRecordController {
                 request.care(),
                 request.animalType(),
                 request.careDate(),
-                request.assigneeEmail()
+                request.assigneeEmail(),
+                request.recurrenceIntervalDays()
         );
     }
 
@@ -80,7 +81,8 @@ public class CareRecordController {
                 request.care(),
                 request.animalType(),
                 request.careDate(),
-                request.assigneeEmail()
+                request.assigneeEmail(),
+                request.recurrenceIntervalDays()
         );
     }
 
