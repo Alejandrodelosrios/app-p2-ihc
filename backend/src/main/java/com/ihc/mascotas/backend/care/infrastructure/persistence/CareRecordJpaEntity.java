@@ -42,9 +42,12 @@ public class CareRecordJpaEntity {
     @Column(name="assigned_to_user_id")
     private UUID assignedToUserId;
 
+    @Column(name="recurrence_interval_days")
+    private Integer recurrenceIntervalDays;
+
     protected CareRecordJpaEntity() {}
 
-    public CareRecordJpaEntity(UUID id, UUID userId, String petName, String care, String animalType, LocalDate careDate, Instant createdAt, CareRecordStatus status, UUID assignedToUserId ) {
+    public CareRecordJpaEntity(UUID id, UUID userId, String petName, String care, String animalType, LocalDate careDate, Instant createdAt, CareRecordStatus status, UUID assignedToUserId, Integer recurrenceIntervalDays ) {
         this.id = id;
         this.userId = userId;
         this.petName = petName;
@@ -54,6 +57,7 @@ public class CareRecordJpaEntity {
         this.createdAt = createdAt;
         this.status = status;
         this.assignedToUserId = assignedToUserId;
+        this.recurrenceIntervalDays = recurrenceIntervalDays;
     }
 
     public UUID getId() {
@@ -90,5 +94,9 @@ public class CareRecordJpaEntity {
     
     public UUID getAssignedToUserId(){
         return assignedToUserId;
+    }
+
+    public Integer getRecurrenceIntervalDays(){
+        return recurrenceIntervalDays;
     }
 }

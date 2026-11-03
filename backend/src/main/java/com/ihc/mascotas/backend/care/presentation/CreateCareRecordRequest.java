@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.Size;
-
+import jakarta.validation.constraints.Min;
 import java.time.LocalDate;
 
 public record CreateCareRecordRequest(
@@ -12,7 +12,8 @@ public record CreateCareRecordRequest(
         @NotBlank String care,
         @NotBlank String animalType,
         @NotNull LocalDate careDate,
-        @Email @Size(max = 180) String assigneeEmail
+        @Email @Size(max = 180) String assigneeEmail,
+        @Min(1) Integer recurrenceIntervalDays
 ) {
 
 }
