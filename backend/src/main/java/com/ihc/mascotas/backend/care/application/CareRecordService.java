@@ -44,8 +44,10 @@ public class CareRecordService {
             String care,
             String animalType,
             LocalDate careDate,
-            String assigneeEmail
+            String assigneeEmail,
+            Integer recurrenceIntervalDays
     ) {
+        validateRecurrenceInterval(recurrenceIntervalDays);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -59,7 +61,8 @@ public class CareRecordService {
                 careDate,
                 Instant.now(),
                 CareRecordStatus.PENDING,
-                assigneeId
+                assigneeId,
+                recurrenceIntervalDays
         );
 
         return careRecordRepository.save(record);
@@ -72,7 +75,18 @@ public class CareRecordService {
             String animalType,
             LocalDate careDate
     ) {
-        return create(email, petName, care, animalType, careDate, null);
+        return create(email, petName, care, animalType, careDate, null, null);
+    }
+
+    public CareRecord create(
+            String email,
+            String petName,
+            String care,
+            String animalType,
+            LocalDate careDate,
+            String assigneeEmail
+    ) {
+        return create(email, petName, care, animalType, careDate, assigneeEmail, null);
     }
 
     public List<CareRecord> findByUserEmail(String email) {
@@ -113,19 +127,29 @@ public class CareRecordService {
             throw new ConflictException("El cuidado ya fue realizado");
         }
 
-        CareRecord completed = new CareRecord(
+        LocalDate completionDate = LocalDate.now();
+        boolean recurring = record.recurrenceIntervalDays() != null;
+        LocalDate nextCareDate = recurring
+                ? completionDate.plusDays(record.recurrenceIntervalDays())
+                : record.careDate();
+        CareRecordStatus nextStatus = recurring
+                ? CareRecordStatus.PENDING
+                : CareRecordStatus.COMPLETED;
+
+        CareRecord updated = new CareRecord(
                 record.id(),
                 record.userId(),
                 record.petName(),
                 record.care(),
                 record.animalType(),
-                record.careDate(),
+                nextCareDate,
                 record.createdAt(),
-                CareRecordStatus.COMPLETED,
-                record.assignedToUserId()
+                nextStatus,
+                record.assignedToUserId(),
+                record.recurrenceIntervalDays()
         );
 
-        CareRecord saved = careRecordRepository.save(completed);
+        CareRecord saved = careRecordRepository.save(updated);
         careHistoryRepository.save(new CareHistoryEntry(
                 UUID.randomUUID(),
                 user.id(),
@@ -134,7 +158,7 @@ public class CareRecordService {
                 record.care(),
                 CareHistoryAction.COMPLETED,
                 null,
-                record.careDate(),
+                completionDate,
                 Instant.now()
         ));
         return saved;
@@ -148,8 +172,10 @@ public class CareRecordService {
             String care,
             String animalType,
             LocalDate careDate,
-            String assigneeEmail
+            String assigneeEmail,
+            Integer recurrenceIntervalDays
     ) {
+        validateRecurrenceInterval(recurrenceIntervalDays);
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new IllegalArgumentException("User not found"));
 
@@ -158,9 +184,19 @@ public class CareRecordService {
                 .orElseThrow(() -> new NotFoundException("Cuidado no encontrado"));
 
         boolean dateChanged = !record.careDate().equals(careDate);
+        boolean recurrenceChanged = !Objects.equals(
+                record.recurrenceIntervalDays(),
+                recurrenceIntervalDays
+        );
 
         if (record.status() == CareRecordStatus.COMPLETED && dateChanged) {
             throw new NotAllowedException("No puedes reprogramar un cuidado ya hecho");
+        }
+
+        if (record.status() == CareRecordStatus.COMPLETED && recurrenceChanged) {
+            throw new NotAllowedException(
+                    "No puedes cambiar la recurrencia de un cuidado ya realizado"
+            );
         }
 
         if (dateChanged && careDate.isBefore(LocalDate.now())) {
@@ -178,7 +214,8 @@ public class CareRecordService {
                 careDate,
                 record.createdAt(),
                 record.status(),
-                assigneeId
+                assigneeId,
+                recurrenceIntervalDays
         );
 
         CareRecord saved = careRecordRepository.save(updated);
@@ -208,7 +245,19 @@ public class CareRecordService {
             String animalType,
             LocalDate careDate
     ) {
-        return update(email, id, petName, care, animalType, careDate, null);
+        return update(email, id, petName, care, animalType, careDate, null, null);
+    }
+
+    public CareRecord update(
+            String email,
+            UUID id,
+            String petName,
+            String care,
+            String animalType,
+            LocalDate careDate,
+            String assigneeEmail
+    ) {
+        return update(email, id, petName, care, animalType, careDate, assigneeEmail, null);
     }
 
     public void delete(String email, UUID id) {
@@ -235,5 +284,13 @@ public class CareRecordService {
     private boolean isOwnerOrAssignee(CareRecord record, UUID userId) {
         return record.userId().equals(userId)
                 || Objects.equals(record.assignedToUserId(), userId);
+    }
+
+    private void validateRecurrenceInterval(Integer interval) {
+        if (interval != null && interval < 1) {
+            throw new NotAllowedException(
+                    "El intervalo de recurrencia debe ser de al menos un día"
+            );
+        }
     }
 }
