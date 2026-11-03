@@ -75,7 +75,8 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
                 careRecord.careDate(),
                 careRecord.createdAt(),
                 careRecord.status(),
-                careRecord.assignedToUserId()
+                careRecord.assignedToUserId(),
+                careRecord.recurrenceIntervalDays()
             );
     }
 
@@ -89,7 +90,8 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
                 careRecord.getCareDate(),
                 careRecord.getCreatedAt(),
                 careRecord.getStatus(),
-                careRecord.getAssignedToUserId()
+                careRecord.getAssignedToUserId(),
+                careRecord.getRecurrenceIntervalDays()
             );
     }
 }
