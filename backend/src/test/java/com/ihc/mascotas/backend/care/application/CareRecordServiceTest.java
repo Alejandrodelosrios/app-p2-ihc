@@ -53,6 +53,89 @@ class CareRecordServiceTest {
     }
 
     @Test
+    void createRecurringCareStoresInterval() {
+        User user = user();
+        when(users.findByEmail(user.email())).thenReturn(Optional.of(user));
+        when(careRecords.save(any(CareRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CareRecord created = service.create(
+                user.email(),
+                "Firulais",
+                "Baño",
+                "Perro",
+                LocalDate.now().plusDays(1),
+                null,
+                15
+        );
+
+        assertEquals(15, created.recurrenceIntervalDays());
+        assertEquals(CareRecordStatus.PENDING, created.status());
+    }
+
+    @Test
+    void completingRecurringCareSchedulesNextOccurrence() {
+        User user = user();
+        CareRecord pending = new CareRecord(
+                UUID.randomUUID(),
+                user.id(),
+                "Firulais",
+                "Baño",
+                "Perro",
+                LocalDate.now().plusDays(2),
+                Instant.now(),
+                CareRecordStatus.PENDING,
+                null,
+                15
+        );
+        when(users.findByEmail(user.email())).thenReturn(Optional.of(user));
+        when(careRecords.findById(pending.id())).thenReturn(Optional.of(pending));
+        when(careRecords.save(any(CareRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CareRecord result = service.complete(user.email(), pending.id());
+
+        assertEquals(CareRecordStatus.PENDING, result.status());
+        assertEquals(LocalDate.now().plusDays(15), result.careDate());
+        assertEquals(15, result.recurrenceIntervalDays());
+        verify(history).save(any(CareHistoryEntry.class));
+    }
+
+    @Test
+    void completingNonRecurringCareStillMarksItCompleted() {
+        User user = user();
+        CareRecord pending = record(user.id(), CareRecordStatus.PENDING);
+        when(users.findByEmail(user.email())).thenReturn(Optional.of(user));
+        when(careRecords.findById(pending.id())).thenReturn(Optional.of(pending));
+        when(careRecords.save(any(CareRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        CareRecord result = service.complete(user.email(), pending.id());
+
+        assertEquals(CareRecordStatus.COMPLETED, result.status());
+        assertEquals(pending.careDate(), result.careDate());
+        assertNull(result.recurrenceIntervalDays());
+    }
+
+    @Test
+    void creatingRecurringCareWithZeroDaysIsRejected() {
+        User user = user();
+        when(users.findByEmail(user.email())).thenReturn(Optional.of(user));
+
+        assertThrows(
+                NotAllowedException.class,
+                () -> service.create(
+                        user.email(),
+                        "Firulais",
+                        "Baño",
+                        "Perro",
+                        LocalDate.now(),
+                        null,
+                        0
+                )
+        );
+
+        verify(careRecords, never()).save(any());
+    }
+
+    @Test
     void pendingCareCanBeCompleted() {
         User user = user();
         CareRecord pending = record(user.id(), CareRecordStatus.PENDING);
@@ -269,7 +352,7 @@ class CareRecordServiceTest {
         CareHistoryEntry entry = captor.getValue();
         assertEquals(CareHistoryAction.COMPLETED, entry.action());
         assertEquals(pending.id(), entry.careRecordId());
-        assertEquals(pending.careDate(), entry.currentCareDate());
+        assertEquals(LocalDate.now(), entry.currentCareDate());
     }
 
     @Test
