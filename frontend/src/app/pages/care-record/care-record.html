@@ -64,6 +64,42 @@
       </div>
     }
 
+    @if (canReschedule()) {
+      <section class="assignment-field" aria-labelledby="recurrence-title">
+        <div class="assignment-field__heading">
+          <app-icon name="event_repeat" [size]="21" />
+          <div>
+            <h2 id="recurrence-title">Repetición</h2>
+            <p>Opcional. Al marcarlo como realizado, se reprogramará automáticamente.</p>
+          </div>
+        </div>
+
+        <label class="assignment-toggle">
+          <input type="checkbox" [checked]="repeats()" (change)="toggleRecurrence($event)" />
+          <span>Repetir este cuidado</span>
+        </label>
+
+        @if (repeats()) {
+          <label class="assignment-search">
+            <span>Repetir cada (días)</span>
+            <input
+              id="recurrence-days"
+              type="number"
+              min="1"
+              [max]="maxRecurrenceDays"
+              step="1"
+              inputmode="numeric"
+              [formControl]="recurrenceDays"
+              [attr.aria-invalid]="!!recurrenceError()"
+            />
+          </label>
+          @if (recurrenceError()) {
+            <p class="assignment-message assignment-message--error" role="alert">{{ recurrenceError() }}</p>
+          }
+        }
+      </section>
+    }
+
     <section class="assignment-field" aria-labelledby="assignment-title">
       <div class="assignment-field__heading">
         <app-icon name="group" [size]="21" />
@@ -153,7 +189,7 @@
       <app-button
         type="submit"
         [loading]="loading()"
-        [disabled]="loading()"
+        [disabled]="loading() || !assigneeReady()"
       >
         {{ editing ? 'Guardar cambios' : 'Guardar cuidado' }}
       </app-button>

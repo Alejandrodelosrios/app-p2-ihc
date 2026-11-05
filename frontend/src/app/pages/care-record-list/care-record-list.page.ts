@@ -1,7 +1,7 @@
 import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { finalize } from 'rxjs';
+import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import { CareRecordService } from '../../core/care/care-record';
 import { AuthService } from '../../core/auth/auth.service';
@@ -42,6 +42,8 @@ export class CareRecordListPage implements OnInit {
   readonly loading = signal(true);
   readonly errorMessage = signal('');
   readonly statusErrorMessage = signal('');
+  readonly successMessage = signal('');
+  readonly peopleNames = signal<Record<string, string>>({});
   readonly completingId = signal<string | null>(null);
   readonly deletingId = signal<string | null>(null);
   readonly showMoreFilters = signal(false);
@@ -74,6 +76,7 @@ export class CareRecordListPage implements OnInit {
       .subscribe({
         next: (records) => {
           this.records.set(records);
+          this.resolvePeople(records);
         },
         error: () => {
           this.errorMessage.set(
@@ -218,6 +221,43 @@ export class CareRecordListPage implements OnInit {
     return `${year}-${month}-${day}`;
   }
 
+  personName(record: CareRecord, assignedToMe: boolean): string | null {
+    const id = assignedToMe ? record.userId : record.assignedToUserId;
+    return id ? this.peopleNames()[id] ?? null : null;
+  }
+
+  private formatDisplayDate(isoDate: string): string {
+    const [year, month, day] = isoDate.split('-');
+    return `${day}/${month}/${year}`;
+  }
+
+  /** Obtiene el nombre de dueños/asignados que aún no conocemos para mostrarlo en las tarjetas. */
+  private resolvePeople(records: CareRecord[]): void {
+    const me = this.authService.user()?.id;
+    const known = this.peopleNames();
+    const ids = new Set<string>();
+
+    for (const record of records) {
+      if (record.assignedToUserId && record.assignedToUserId !== me) ids.add(record.assignedToUserId);
+      if (record.userId !== me && record.assignedToUserId === me) ids.add(record.userId);
+    }
+
+    const missing = [...ids].filter((id) => !(id in known));
+    if (missing.length === 0) {
+      return;
+    }
+
+    forkJoin(
+      missing.map((id) => this.authService.findUser(id).pipe(catchError(() => of(null)))),
+    ).subscribe((users) => {
+      const names: Record<string, string> = {};
+      users.forEach((user) => {
+        if (user) names[user.id] = user.fullName;
+      });
+      this.peopleNames.update((current) => ({ ...current, ...names }));
+    });
+  }
+
   completeRecord(id: string): void {
     if (this.completingId() !== null) {
       return;
@@ -225,6 +265,7 @@ export class CareRecordListPage implements OnInit {
 
     this.completingId.set(id);
     this.statusErrorMessage.set('');
+    this.successMessage.set('');
 
     this.careRecordService
       .complete(id)
@@ -236,6 +277,12 @@ export class CareRecordListPage implements OnInit {
           this.records.update((records) =>
             records.map((record) => record.id === updated.id ? updated : record),
           );
+
+          if (updated.recurrenceIntervalDays && updated.status === 'PENDING') {
+            this.successMessage.set(
+              `Cuidado realizado. Próxima fecha: ${this.formatDisplayDate(updated.careDate)}`,
+            );
+          }
         },
         error: () => {
           this.statusErrorMessage.set('No se pudo marcar el cuidado como realizado');

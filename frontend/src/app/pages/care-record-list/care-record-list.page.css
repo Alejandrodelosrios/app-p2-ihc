@@ -208,43 +208,8 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
-
-.records-section {
-  display: grid;
-  gap: 1rem;
-  margin-top: 1.5rem;
-}
-
-.records-section__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-}
-
-.records-section__header h2 {
+.status-success {
   margin: 0;
-  font-size: 1.2rem;
-}
-
-.records-section__count {
-  display: grid;
-  place-items: center;
-  min-width: 2rem;
-  height: 2rem;
-  padding: 0 0.55rem;
-  border-radius: 999px;
-  background: var(--color-primary-soft);
   color: var(--color-primary-strong);
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-
-.records-section__empty {
-  margin: 0;
-  padding: 1rem;
-  border: 1px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-  color: var(--color-text-muted);
-  font-size: 0.9rem;
+  font-size: .9rem;
 }
