@@ -62,6 +62,16 @@ public class GlobalExceptionHandler {
         return error(HttpStatus.CONFLICT, "El recurso ya existe o entra en conflicto con datos existentes", Map.of());
     }
 
+    @ExceptionHandler(NotAllowedException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    ApiError handleNotAllowed(NotAllowedException exception){
+        return error(
+            HttpStatus.BAD_REQUEST,
+            exception.getMessage(),
+            Map.of()
+        );
+    }
+
     private static ApiError error(HttpStatus status, String message, Map<String, String> fields) {
         return new ApiError(Instant.now(), status.value(), status.getReasonPhrase(), message, fields);
     }
