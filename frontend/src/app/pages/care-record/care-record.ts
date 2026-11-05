@@ -1,6 +1,14 @@
 import { Component, DestroyRef, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { FormBuilder, FormControl, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  FormBuilder,
+  FormControl,
+  ReactiveFormsModule,
+  ValidationErrors,
+  ValidatorFn,
+  Validators,
+} from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
@@ -15,6 +23,18 @@ import { IconComponent } from '../../shared/ui/icon/icon.component';
 
 const MIN_SEARCH_LENGTH = 3;
 const MAX_RECURRENCE_DAYS = 365;
+
+const notPastDateValidator: ValidatorFn = (
+  control: AbstractControl<string>,
+): ValidationErrors | null => {
+  if (!control.value) {
+    return null;
+  }
+
+  const today = new Date();
+  const todayValue = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+  return control.value < todayValue ? { pastDate: true } : null;
+};
 
 @Component({
   selector: 'app-care-record',
@@ -49,7 +69,7 @@ export class CareRecord {
     petName: ['', Validators.required],
     care: ['', Validators.required],
     animalType: ['', Validators.required],
-    careDate: ['', Validators.required],
+    careDate: ['', [Validators.required, notPastDateValidator]],
   });
 
   // Recurrencia
@@ -230,6 +250,10 @@ export class CareRecord {
 
     if (control.touched && control.hasError('required')) {
       return 'Selecciona una fecha';
+    }
+
+    if (control.touched && control.hasError('pastDate')) {
+      return 'La fecha no puede ser anterior a hoy';
     }
 
     return null;

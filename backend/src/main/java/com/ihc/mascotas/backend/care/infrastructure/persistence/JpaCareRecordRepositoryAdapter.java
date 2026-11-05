@@ -38,14 +38,14 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
     @Override
     public List<CareRecord> findByFilters(
             UUID userId,
-            String petName,
+            UUID petId,
             CareRecordStatus status,
             String careType,
             LocalDate fromDate,
             LocalDate toDate) {
         return repository.findByFilters(
                 userId,
-                petName == null ? "" : petName,
+                petId,
                 status,
                 careType == null ? "" : careType,
                 fromDate,
@@ -69,9 +69,8 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
         return new CareRecordJpaEntity(
                 careRecord.id(),
                 careRecord.userId(),
-                careRecord.petName(),
+                careRecord.petId(),
                 careRecord.care(),
-                careRecord.animalType(),
                 careRecord.careDate(),
                 careRecord.createdAt(),
                 careRecord.status(),
@@ -84,9 +83,8 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
         return new CareRecord(
                 careRecord.getId(),
                 careRecord.getUserId(),
-                careRecord.getPetName(),
+                careRecord.getPetId(),
                 careRecord.getCare(),
-                careRecord.getAnimalType(),
                 careRecord.getCareDate(),
                 careRecord.getCreatedAt(),
                 careRecord.getStatus(),

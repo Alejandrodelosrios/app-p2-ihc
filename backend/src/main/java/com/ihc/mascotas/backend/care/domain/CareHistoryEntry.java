@@ -8,6 +8,7 @@ public record CareHistoryEntry(
         UUID id,
         UUID userId,
         UUID careRecordId,
+        UUID petId,
         String petName,
         String care,
         CareHistoryAction action,

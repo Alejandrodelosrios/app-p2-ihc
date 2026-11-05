@@ -20,14 +20,11 @@ public class CareRecordJpaEntity {
     @Column(name = "user_id", nullable = false)
     private UUID userId;
 
-    @Column(name = "pet_name", nullable = false)
-    private String petName;
+    @Column(name = "pet_id", nullable = false)
+    private UUID petId;
 
     @Column(name = "care")
     private String care;
-
-    @Column(name = "animal_type")
-    private String animalType;
 
     @Column(name = "care_date")
     private LocalDate careDate;
@@ -39,20 +36,21 @@ public class CareRecordJpaEntity {
     @Column(name = "status", nullable = false)
     private CareRecordStatus status;
 
-    @Column(name="assigned_to_user_id")
+    @Column(name = "assigned_to_user_id")
     private UUID assignedToUserId;
 
-    @Column(name="recurrence_interval_days")
+    @Column(name = "recurrence_interval_days")
     private Integer recurrenceIntervalDays;
 
     protected CareRecordJpaEntity() {}
 
-    public CareRecordJpaEntity(UUID id, UUID userId, String petName, String care, String animalType, LocalDate careDate, Instant createdAt, CareRecordStatus status, UUID assignedToUserId, Integer recurrenceIntervalDays ) {
+    public CareRecordJpaEntity(UUID id, UUID userId, UUID petId, String care, LocalDate careDate,
+                               Instant createdAt, CareRecordStatus status, UUID assignedToUserId,
+                               Integer recurrenceIntervalDays) {
         this.id = id;
         this.userId = userId;
-        this.petName = petName;
+        this.petId = petId;
         this.care = care;
-        this.animalType = animalType;
         this.careDate = careDate;
         this.createdAt = createdAt;
         this.status = status;
@@ -60,43 +58,13 @@ public class CareRecordJpaEntity {
         this.recurrenceIntervalDays = recurrenceIntervalDays;
     }
 
-    public UUID getId() {
-        return id;
-    }
-
-    public UUID getUserId() {
-        return userId;
-    }
-
-    public String getPetName() {
-        return petName;
-    }
-
-    public String getCare() {
-        return care;
-    }
-
-    public String getAnimalType() {
-        return animalType;
-    }
-
-    public LocalDate getCareDate() {
-        return careDate;
-    }
-
-    public Instant getCreatedAt() {
-        return createdAt;
-    }
-
-    public CareRecordStatus getStatus() {
-        return status;
-    }
-    
-    public UUID getAssignedToUserId(){
-        return assignedToUserId;
-    }
-
-    public Integer getRecurrenceIntervalDays(){
-        return recurrenceIntervalDays;
-    }
+    public UUID getId() { return id; }
+    public UUID getUserId() { return userId; }
+    public UUID getPetId() { return petId; }
+    public String getCare() { return care; }
+    public LocalDate getCareDate() { return careDate; }
+    public Instant getCreatedAt() { return createdAt; }
+    public CareRecordStatus getStatus() { return status; }
+    public UUID getAssignedToUserId() { return assignedToUserId; }
+    public Integer getRecurrenceIntervalDays() { return recurrenceIntervalDays; }
 }

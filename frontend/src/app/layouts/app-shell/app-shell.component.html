@@ -1,7 +1,10 @@
 <div class="shell">
   <header class="shell-header">
-    <a class="shell-brand" routerLink="/mis-mascotas" aria-label="Ir a Mis Mascotas">
+    <a class="shell-brand" routerLink="/dashboard" aria-label="Ir al dashboard">
       <app-icon name="pets" [size]="24" /><span>Mascotas al Día</span>
+    </a>
+    <a routerLink="/dashboard" routerLinkActive="menu__link--active" class="menu__link" (click)="closeMenu()">
+      Dashboard
     </a>
     <a routerLink="/cuidados" routerLinkActive="menu__link--active" class="menu__link" (click)="closeMenu()">
       Cuidados
@@ -17,6 +20,8 @@
             <strong>{{ auth.user()?.fullName }}</strong>
             <span>{{ auth.user()?.email }}</span>
           </div>
+          <a routerLink="/dashboard" routerLinkActive="menu__link--active" class="menu__link"
+            (click)="closeMenu()">Dashboard</a>
           <a routerLink="/mis-mascotas" routerLinkActive="menu__link--active" class="menu__link"
             (click)="closeMenu()">Mis Mascotas</a>
           <a routerLink="/historial" routerLinkActive="menu__link--active" class="menu__link"

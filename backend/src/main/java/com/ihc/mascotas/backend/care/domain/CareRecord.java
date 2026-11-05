@@ -7,37 +7,12 @@ import java.util.UUID;
 public record CareRecord(
         UUID id,
         UUID userId,
-        String petName,
+        UUID petId,
         String care,
-        String animalType,
         LocalDate careDate,
         Instant createdAt,
         CareRecordStatus status,
         UUID assignedToUserId,
         Integer recurrenceIntervalDays
 ) {
-    public CareRecord(
-            UUID id,
-            UUID userId,
-            String petName,
-            String care,
-            String animalType,
-            LocalDate careDate,
-            Instant createdAt,
-            CareRecordStatus status,
-            UUID assignedToUserId
-    ) {
-        this(
-                id,
-                userId,
-                petName,
-                care,
-                animalType,
-                careDate,
-                createdAt,
-                status,
-                assignedToUserId,
-                null
-        );
-    }
 }

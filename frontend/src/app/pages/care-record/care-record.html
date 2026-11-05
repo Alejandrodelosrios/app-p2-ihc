@@ -51,12 +51,10 @@
         type="date"
         [control]="form.controls.careDate"
         [error]="careDateError()"
-        [min]="editing ? today : ''"
+        [min]="today"
       />
 
-      @if (editing) {
-        <p class="care-form__hint">La nueva fecha no puede ser anterior a hoy.</p>
-      }
+      <p class="care-form__hint">La fecha no puede ser anterior a hoy.</p>
     } @else {
       <div class="feedback feedback--info" role="status">
         <app-icon name="info" [size]="20" />

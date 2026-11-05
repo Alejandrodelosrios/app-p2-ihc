@@ -19,6 +19,10 @@ public class DemoDataSeeder implements ApplicationRunner {
     private static final String ALEX_USER_EMAIL = "alex@example.com";
     private static final String ALEX_USER_PASSWORD = "12345678";
 
+    private static final UUID LUNA_PET_ID = UUID.fromString("c3a1f5d2-7b84-4e19-a6c0-5d2e8f1b9a01");
+    private static final UUID MILO_PET_ID = UUID.fromString("d4b2a6e3-8c95-4f2a-b7d1-6e3f9a2c0b02");
+    private static final UUID COCO_PET_ID = UUID.fromString("e5c3b7f4-9da6-4a3b-88e2-7f4a0b3d1c03");
+
     private final JdbcTemplate jdbcTemplate;
     private final PasswordEncoder passwordEncoder;
 
@@ -38,7 +42,7 @@ public class DemoDataSeeder implements ApplicationRunner {
                 "Ana Pérez",
                 DEMO_EMAIL,
                 passwordEncoder.encode(DEMO_PASSWORD));
-            
+
         jdbcTemplate.update("""
                 INSERT INTO app_user (id, full_name, email, password_hash, created_at, updated_at)
                 VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
@@ -49,55 +53,63 @@ public class DemoDataSeeder implements ApplicationRunner {
                 ALEX_USER_EMAIL,
                 passwordEncoder.encode(ALEX_USER_PASSWORD));
 
-        jdbcTemplate.update("""
-                INSERT INTO care_record
-                    (id, user_id, pet_name, care, animal_type, care_date, created_at, status)
-                SELECT ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?
-                WHERE EXISTS (SELECT 1 FROM app_user WHERE id = ?)
-                  AND NOT EXISTS (SELECT 1 FROM care_record WHERE id = ?)
-                """,
+        // Primero las mascotas (care_record.pet_id tiene FK hacia pet).
+        seedPet(LUNA_PET_ID, "Luna", "DOG");
+        seedPet(MILO_PET_ID, "Milo", "CAT");
+        seedPet(COCO_PET_ID, "Coco", "RABBIT");
+
+        seedCare(
                 UUID.fromString("f7c1d9e2-42d7-4a2d-b8c1-8c4f6e5a9011"),
-                DEMO_USER_ID,
-                "Luna",
+                LUNA_PET_ID,
                 "Vacuna antirrábica",
-                "Perro",
-                java.sql.Date.valueOf("2026-10-15"),
-                "COMPLETED",
-                DEMO_USER_ID,
-                UUID.fromString("f7c1d9e2-42d7-4a2d-b8c1-8c4f6e5a9011"));
+                "2026-10-15",
+                "COMPLETED");
 
-        jdbcTemplate.update("""
-                INSERT INTO care_record
-                    (id, user_id, pet_name, care, animal_type, care_date, created_at, status)
-                SELECT ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?
-                WHERE EXISTS (SELECT 1 FROM app_user WHERE id = ?)
-                  AND NOT EXISTS (SELECT 1 FROM care_record WHERE id = ?)
-                """,
+        seedCare(
                 UUID.fromString("2a6e3f91-8b5c-4d72-a0f6-1c9e7b3d5022"),
-                DEMO_USER_ID,
-                "Milo",
+                MILO_PET_ID,
                 "Desparasitación",
-                "Gato",
-                java.sql.Date.valueOf("2026-11-05"),
-                "PENDING",
-                DEMO_USER_ID,
-                UUID.fromString("2a6e3f91-8b5c-4d72-a0f6-1c9e7b3d5022"));
+                "2026-11-05",
+                "PENDING");
 
+        seedCare(
+                UUID.fromString("9b4d2c68-1f73-46a9-8e05-3d7c2b6f8044"),
+                COCO_PET_ID,
+                "Control veterinario",
+                "2026-11-20",
+                "PENDING");
+    }
+
+    private void seedPet(UUID petId, String name, String species) {
+        jdbcTemplate.update("""
+                INSERT INTO pet (id, owner_id, name, species, created_at, updated_at)
+                SELECT ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP
+                WHERE EXISTS (SELECT 1 FROM app_user WHERE id = ?)
+                  AND NOT EXISTS (SELECT 1 FROM pet WHERE id = ?)
+                """,
+                petId,
+                DEMO_USER_ID,
+                name,
+                species,
+                DEMO_USER_ID,
+                petId);
+    }
+
+    private void seedCare(UUID careId, UUID petId, String care, String careDate, String status) {
         jdbcTemplate.update("""
                 INSERT INTO care_record
-                    (id, user_id, pet_name, care, animal_type, care_date, created_at, status)
-                SELECT ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?
-                WHERE EXISTS (SELECT 1 FROM app_user WHERE id = ?)
+                    (id, user_id, pet_id, care, care_date, created_at, status)
+                SELECT ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?
+                WHERE EXISTS (SELECT 1 FROM pet WHERE id = ?)
                   AND NOT EXISTS (SELECT 1 FROM care_record WHERE id = ?)
                 """,
-                UUID.fromString("9b4d2c68-1f73-46a9-8e05-3d7c2b6f8044"),
+                careId,
                 DEMO_USER_ID,
-                "Coco",
-                "Control veterinario",
-                "Conejo",
-                java.sql.Date.valueOf("2026-11-20"),
-                "PENDING",
-                DEMO_USER_ID,
-                UUID.fromString("9b4d2c68-1f73-46a9-8e05-3d7c2b6f8044"));
+                petId,
+                care,
+                java.sql.Date.valueOf(careDate),
+                status,
+                petId,
+                careId);
     }
 }

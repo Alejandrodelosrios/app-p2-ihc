@@ -24,6 +24,9 @@ public class CareHistoryJpaEntity {
     @Column(name = "care_record_id", nullable = false)
     private UUID careRecordId;
 
+    @Column(name = "pet_id", nullable = false)
+    private UUID petId;
+
     @Column(name = "pet_name", nullable = false)
     private String petName;
 
@@ -50,6 +53,7 @@ public class CareHistoryJpaEntity {
             UUID id,
             UUID userId,
             UUID careRecordId,
+            UUID petId,
             String petName,
             String care,
             CareHistoryAction action,
@@ -60,6 +64,7 @@ public class CareHistoryJpaEntity {
         this.id = id;
         this.userId = userId;
         this.careRecordId = careRecordId;
+        this.petId = petId;
         this.petName = petName;
         this.care = care;
         this.action = action;
@@ -71,6 +76,7 @@ public class CareHistoryJpaEntity {
     public UUID getId() { return id; }
     public UUID getUserId() { return userId; }
     public UUID getCareRecordId() { return careRecordId; }
+    public UUID getPetId(){ return petId;}
     public String getPetName() { return petName; }
     public String getCare() { return care; }
     public CareHistoryAction getAction() { return action; }

@@ -1,6 +1,7 @@
 package com.ihc.mascotas.backend.care.presentation;
 
 import com.ihc.mascotas.backend.care.application.CareRecordService;
+import com.ihc.mascotas.backend.care.application.CareRecordView;
 import com.ihc.mascotas.backend.care.domain.CareRecord;
 import com.ihc.mascotas.backend.care.domain.CareRecordStatus;
 import jakarta.validation.Valid;
@@ -25,70 +26,85 @@ public class CareRecordController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public CareRecord create(
+    public CareRecordResponse create(
             Principal principal,
             @Valid @RequestBody CreateCareRecordRequest request
     ) {
-        String email = principal.getName();
-
-        return careRecordService.create(
-                email,
-                request.petName(),
+        return toResponse(careRecordService.create(
+                principal.getName(),
+                request.petId(),
                 request.care(),
-                request.animalType(),
                 request.careDate(),
                 request.assigneeEmail(),
                 request.recurrenceIntervalDays()
-        );
+        ));
     }
 
     @GetMapping
-    public List<CareRecord> findByEmail(
+    public List<CareRecordResponse> findByEmail(
             Principal principal,
-            @RequestParam(required = false) String petName,
+            @RequestParam(required = false) UUID petId,
             @RequestParam(required = false) CareRecordStatus status,
             @RequestParam(required = false) String careType,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate
     ) {
-        String email = principal.getName();
-
         return careRecordService.findByUserEmail(
-                email,
-                petName,
-                status,
-                careType,
-                fromDate,
-                toDate
-        );
+                        principal.getName(),
+                        petId,
+                        status,
+                        careType,
+                        fromDate,
+                        toDate
+                )
+                .stream()
+                .map(CareRecordController::toResponse)
+                .toList();
     }
 
     @PatchMapping("/{id}/complete")
-    public CareRecord complete(Principal principal, @PathVariable UUID id) {
-        return careRecordService.complete(principal.getName(), id);
+    public CareRecordResponse complete(Principal principal, @PathVariable UUID id) {
+        return toResponse(careRecordService.complete(principal.getName(), id));
     }
 
     @PutMapping("/{id}")
-    public CareRecord update(
+    public CareRecordResponse update(
             Principal principal,
             @PathVariable UUID id,
             @Valid @RequestBody UpdateCareRecordRequest request
     ) {
-        return careRecordService.update(
+        return toResponse(careRecordService.update(
                 principal.getName(),
                 id,
-                request.petName(),
+                request.petId(),
                 request.care(),
-                request.animalType(),
                 request.careDate(),
                 request.assigneeEmail(),
                 request.recurrenceIntervalDays()
-        );
+        ));
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void delete(Principal principal, @PathVariable UUID id) {
         careRecordService.delete(principal.getName(), id);
+    }
+
+    private static CareRecordResponse toResponse(CareRecordView view) {
+        CareRecord record = view.record();
+        return new CareRecordResponse(
+                record.id(),
+                record.userId(),
+                record.petId(),
+                view.petName(),
+                view.petSpecies(),
+                view.petActive(),
+                record.care(),
+                record.careDate(),
+                record.createdAt(),
+                record.status(),
+                record.assignedToUserId(),
+                record.recurrenceIntervalDays()
+        );
     }
 }

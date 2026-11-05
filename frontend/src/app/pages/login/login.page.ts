@@ -36,7 +36,7 @@ export class LoginPage {
 
     this.submitting.set(true);
     this.auth.login(this.form.getRawValue()).pipe(finalize(() => this.submitting.set(false))).subscribe({
-      next: () => this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('redirect') || '/mis-mascotas'),
+      next: () => this.router.navigateByUrl(this.route.snapshot.queryParamMap.get('redirect') || '/dashboard'),
       error: (error: HttpErrorResponse) => this.serverError.set((error.error as ApiError)?.message || 'No se pudo iniciar sesión. Intenta nuevamente.'),
     });
   }

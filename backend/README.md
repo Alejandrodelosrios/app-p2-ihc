@@ -66,6 +66,19 @@ Todas las demás rutas bajo `/api/**` requieren un `Authorization: Bearer <token
 }
 ```
 
+### Datos de demostración
+
+Al iniciar el backend se crea automáticamente una cuenta de demostración y tres
+registros de cuidado si todavía no existen:
+
+```text
+Email: ana@example.com
+Contraseña: password123
+```
+
+La semilla es idempotente y no modifica datos existentes. Para desactivarla,
+configura `APP_SEED_ENABLED=false` en `.env`.
+
 ## Seguridad
 
 - BCrypt para hashes de contraseña.

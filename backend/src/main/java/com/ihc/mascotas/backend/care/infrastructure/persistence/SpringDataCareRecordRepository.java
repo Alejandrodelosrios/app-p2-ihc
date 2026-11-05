@@ -17,7 +17,7 @@ public interface SpringDataCareRecordRepository extends JpaRepository<CareRecord
             SELECT record
             FROM CareRecordJpaEntity record
             WHERE (record.userId = :userId OR record.assignedToUserId = :userId)
-              AND (:petName = '' OR LOWER(record.petName) LIKE LOWER(CONCAT('%', :petName, '%')))
+              AND (:petId IS NULL OR record.petId = :petId)
               AND (:status IS NULL OR record.status = :status)
               AND (
                     :careType = ''
@@ -35,7 +35,7 @@ public interface SpringDataCareRecordRepository extends JpaRepository<CareRecord
             """)
     List<CareRecordJpaEntity> findByFilters(
             @Param("userId") UUID userId,
-            @Param("petName") String petName,
+            @Param("petId") UUID petId,
             @Param("status") CareRecordStatus status,
             @Param("careType") String careType,
             @Param("fromDate") LocalDate fromDate,

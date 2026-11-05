@@ -51,6 +51,14 @@ export const routes: Routes = [
       ),
     children: [
       {
+        path: 'dashboard',
+        loadComponent: () =>
+          import('./pages/dashboard/dashboard.page').then(
+            (m) => m.DashboardPage,
+          ),
+      },
+
+      {
         path: 'mis-mascotas',
         loadComponent: () =>
           import('./pages/my-pets/my-pets.page').then((m) => m.MyPetsPage),

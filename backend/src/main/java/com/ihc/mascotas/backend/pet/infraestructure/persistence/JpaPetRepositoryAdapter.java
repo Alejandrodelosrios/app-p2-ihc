@@ -2,11 +2,13 @@ package com.ihc.mascotas.backend.pet.infraestructure.persistence;
 
 import com.ihc.mascotas.backend.pet.domain.Pet;
 import com.ihc.mascotas.backend.pet.domain.PetRepository;
-import org.springframework.stereotype.Repository;
 
+import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.springframework.stereotype.Repository;
 
 @Repository
 public class JpaPetRepositoryAdapter implements PetRepository {
@@ -54,6 +56,19 @@ public class JpaPetRepositoryAdapter implements PetRepository {
                 .map(this::toDomain)
                 .toList();
     }
+
+    @Override
+    public Optional<Pet> findById(UUID petId) {
+     return repository.findById(petId).map(this::toDomain);
+    }
+    
+    @Override
+    public List<Pet> findAllByIds(Collection<UUID> petIds) {
+    return repository.findAllById(petIds)
+            .stream()
+            .map(this::toDomain)
+            .toList();
+}
 
     private Pet toDomain(PetJpaEntity entity) {
         return new Pet(

@@ -8,6 +8,8 @@ import com.ihc.mascotas.backend.care.domain.CareHistoryRepository;
 import com.ihc.mascotas.backend.care.domain.CareRecord;
 import com.ihc.mascotas.backend.care.domain.CareRecordRepository;
 import com.ihc.mascotas.backend.care.domain.CareRecordStatus;
+import com.ihc.mascotas.backend.pet.domain.Pet;
+import com.ihc.mascotas.backend.pet.domain.PetRepository;
 import com.ihc.mascotas.backend.shared.exception.ConflictException;
 import com.ihc.mascotas.backend.shared.exception.ForbiddenException;
 import com.ihc.mascotas.backend.shared.exception.NotAllowedException;
@@ -18,46 +20,55 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 @Service
 public class CareRecordService {
     private final CareRecordRepository careRecordRepository;
     private final CareHistoryRepository careHistoryRepository;
     private final UserRepository userRepository;
+    private final PetRepository petRepository;
 
     public CareRecordService(
             CareRecordRepository careRecordRepository,
             CareHistoryRepository careHistoryRepository,
-            UserRepository userRepository
+            UserRepository userRepository,
+            PetRepository petRepository
     ) {
         this.careRecordRepository = careRecordRepository;
         this.careHistoryRepository = careHistoryRepository;
         this.userRepository = userRepository;
+        this.petRepository = petRepository;
     }
 
-    public CareRecord create(
+    @Transactional
+    public CareRecordView create(
             String email,
-            String petName,
+            UUID petId,
             String care,
-            String animalType,
             LocalDate careDate,
             String assigneeEmail,
             Integer recurrenceIntervalDays
     ) {
+        validateCareDate(careDate);
         validateRecurrenceInterval(recurrenceIntervalDays);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = findUser(email);
+
+        // El dueño sale del JWT; el petId del cliente nunca se confía por sí solo.
+        Pet pet = findActiveOwnedPet(petId, user.id());
 
         UUID assigneeId = resolveAssigneeId(assigneeEmail);
         CareRecord record = new CareRecord(
                 UUID.randomUUID(),
-                user.id(),
-                petName,
+                user.id(),          // creador/gestor (no es necesariamente el dueño)
+                pet.id(),
                 care,
-                animalType,
                 careDate,
                 Instant.now(),
                 CareRecordStatus.PENDING,
@@ -65,59 +76,44 @@ public class CareRecordService {
                 recurrenceIntervalDays
         );
 
-        return careRecordRepository.save(record);
+        return toView(careRecordRepository.save(record), pet);
     }
 
-    public CareRecord create(
+    @Transactional(readOnly = true)
+    public List<CareRecordView> findByUserEmail(
             String email,
-            String petName,
-            String care,
-            String animalType,
-            LocalDate careDate
-    ) {
-        return create(email, petName, care, animalType, careDate, null, null);
-    }
-
-    public CareRecord create(
-            String email,
-            String petName,
-            String care,
-            String animalType,
-            LocalDate careDate,
-            String assigneeEmail
-    ) {
-        return create(email, petName, care, animalType, careDate, assigneeEmail, null);
-    }
-
-    public List<CareRecord> findByUserEmail(String email) {
-        return findByUserEmail(email, null, null, null, null, null);
-    }
-
-    public List<CareRecord> findByUserEmail(
-            String email,
-            String petName,
+            UUID petId,
             CareRecordStatus status,
             String careType,
             LocalDate fromDate,
             LocalDate toDate
     ) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = findUser(email);
 
-        return careRecordRepository.findByFilters(
+        List<CareRecord> records = careRecordRepository.findByFilters(
                 user.id(),
-                petName,
+                petId,
                 status,
                 careType,
                 fromDate,
                 toDate
         );
+
+        // Una sola consulta para todas las mascotas (incluye desactivadas).
+        Set<UUID> petIds = records.stream()
+                .map(CareRecord::petId)
+                .collect(Collectors.toSet());
+        Map<UUID, Pet> petsById = petRepository.findAllByIds(petIds).stream()
+                .collect(Collectors.toMap(Pet::id, Function.identity()));
+
+        return records.stream()
+                .map(record -> toView(record, petsById.get(record.petId())))
+                .toList();
     }
 
     @Transactional
-    public CareRecord complete(String email, UUID id) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    public CareRecordView complete(String email, UUID id) {
+        User user = findUser(email);
 
         CareRecord record = careRecordRepository.findById(id)
                 .filter(careRecord -> isOwnerOrAssignee(careRecord, user.id()))
@@ -126,6 +122,9 @@ public class CareRecordService {
         if (record.status() == CareRecordStatus.COMPLETED) {
             throw new ConflictException("El cuidado ya fue realizado");
         }
+
+        // Sin filtro de dueño ni de activa: el asignado no es dueño y la mascota puede estar desactivada.
+        Pet pet = findPetIncludingInactive(record.petId());
 
         LocalDate completionDate = LocalDate.now();
         boolean recurring = record.recurrenceIntervalDays() != null;
@@ -139,9 +138,8 @@ public class CareRecordService {
         CareRecord updated = new CareRecord(
                 record.id(),
                 record.userId(),
-                record.petName(),
+                record.petId(),
                 record.care(),
-                record.animalType(),
                 nextCareDate,
                 record.createdAt(),
                 nextStatus,
@@ -154,36 +152,37 @@ public class CareRecordService {
                 UUID.randomUUID(),
                 user.id(),
                 record.id(),
-                record.petName(),
+                pet.id(),
+                pet.name(),          // snapshot: nombre de la mascota al momento del evento
                 record.care(),
                 CareHistoryAction.COMPLETED,
                 null,
                 completionDate,
                 Instant.now()
         ));
-        return saved;
+        return toView(saved, pet);
     }
 
     @Transactional
-    public CareRecord update(
+    public CareRecordView update(
             String email,
             UUID id,
-            String petName,
+            UUID petId,
             String care,
-            String animalType,
             LocalDate careDate,
             String assigneeEmail,
             Integer recurrenceIntervalDays
     ) {
+        validateCareDate(careDate);
         validateRecurrenceInterval(recurrenceIntervalDays);
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = findUser(email);
 
         CareRecord record = careRecordRepository.findById(id)
                 .filter(careRecord -> careRecord.userId().equals(user.id()))
                 .orElseThrow(() -> new NotFoundException("Cuidado no encontrado"));
 
-        boolean dateChanged = !record.careDate().equals(careDate);
+        boolean petChanged = !record.petId().equals(petId);
+        boolean dateChanged = !Objects.equals(record.careDate(), careDate);
         boolean recurrenceChanged = !Objects.equals(
                 record.recurrenceIntervalDays(),
                 recurrenceIntervalDays
@@ -199,18 +198,25 @@ public class CareRecordService {
             );
         }
 
-        if (dateChanged && careDate.isBefore(LocalDate.now())) {
-            throw new NotAllowedException("La nueva fecha no puede ser anterior a hoy");
+        if (record.status() == CareRecordStatus.COMPLETED && petChanged) {
+            throw new NotAllowedException(
+                    "No puedes cambiar la mascota de un cuidado ya realizado"
+            );
         }
+
+        // Mascota nueva: debe ser activa y del usuario. Misma mascota: se conserva
+        // aunque haya sido desactivada después (el cuidado no se borra).
+        Pet pet = petChanged
+                ? findActiveOwnedPet(petId, user.id())
+                : findPetIncludingInactive(record.petId());
 
         UUID assigneeId = resolveAssigneeId(assigneeEmail);
 
         CareRecord updated = new CareRecord(
                 record.id(),
                 user.id(),
-                petName,
+                pet.id(),
                 care,
-                animalType,
                 careDate,
                 record.createdAt(),
                 record.status(),
@@ -225,7 +231,8 @@ public class CareRecordService {
                     UUID.randomUUID(),
                     user.id(),
                     record.id(),
-                    updated.petName(),
+                    pet.id(),
+                    pet.name(),      // snapshot al momento del evento
                     updated.care(),
                     CareHistoryAction.RESCHEDULED,
                     record.careDate(),
@@ -234,41 +241,40 @@ public class CareRecordService {
             ));
         }
 
-        return saved;
+        return toView(saved, pet);
     }
 
-    public CareRecord update(
-            String email,
-            UUID id,
-            String petName,
-            String care,
-            String animalType,
-            LocalDate careDate
-    ) {
-        return update(email, id, petName, care, animalType, careDate, null, null);
-    }
-
-    public CareRecord update(
-            String email,
-            UUID id,
-            String petName,
-            String care,
-            String animalType,
-            LocalDate careDate,
-            String assigneeEmail
-    ) {
-        return update(email, id, petName, care, animalType, careDate, assigneeEmail, null);
-    }
-
+    @Transactional
     public void delete(String email, UUID id) {
-        User user = userRepository.findByEmail(email)
-                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+        User user = findUser(email);
 
         CareRecord record = careRecordRepository.findById(id)
                 .filter(careRecord -> careRecord.userId().equals(user.id()))
                 .orElseThrow(() -> new NotFoundException("Cuidado no encontrado"));
 
         careRecordRepository.deleteById(record.id());
+    }
+
+    private User findUser(String email) {
+        return userRepository.findByEmail(email)
+                .orElseThrow(() -> new IllegalArgumentException("User not found"));
+    }
+
+    private Pet findActiveOwnedPet(UUID petId, UUID ownerId) {
+        return petRepository.findActiveByIdAndOwnerId(petId, ownerId)
+                .orElseThrow(() -> new NotFoundException("Mascota no encontrada"));
+    }
+
+    private Pet findPetIncludingInactive(UUID petId) {
+        return petRepository.findById(petId)
+                .orElseThrow(() -> new NotFoundException("Mascota no encontrada"));
+    }
+
+    private CareRecordView toView(CareRecord record, Pet pet) {
+        if (pet == null) {
+            throw new IllegalStateException("El cuidado " + record.id() + " referencia una mascota inexistente");
+        }
+        return new CareRecordView(record, pet.name(), pet.species(), pet.isActive());
     }
 
     private UUID resolveAssigneeId(String assigneeEmail) {
@@ -291,6 +297,12 @@ public class CareRecordService {
             throw new NotAllowedException(
                     "El intervalo de recurrencia debe ser de al menos un día"
             );
+        }
+    }
+
+    private void validateCareDate(LocalDate careDate) {
+        if (careDate != null && careDate.isBefore(LocalDate.now())) {
+            throw new NotAllowedException("La fecha no puede ser anterior a hoy");
         }
     }
 }

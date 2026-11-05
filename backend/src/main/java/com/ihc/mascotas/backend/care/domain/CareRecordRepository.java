@@ -13,7 +13,7 @@ public interface CareRecordRepository {
 
     List<CareRecord> findByFilters(
             UUID userId,
-            String petName,
+            UUID petId,
             CareRecordStatus status,
             String careType,
             LocalDate fromDate,
