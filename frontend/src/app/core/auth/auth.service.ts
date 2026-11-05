@@ -59,6 +59,14 @@ export class AuthService {
     );
   }
 
+  searchUsers(email: string): Observable<AuthUser[]> {
+    return this.http.get<AuthUser[]>(`${environment.apiUrl}/auth/users/search`, { params: { email } });
+  }
+
+  findUser(id: string): Observable<AuthUser> {
+    return this.http.get<AuthUser>(`${environment.apiUrl}/auth/users/${id}`);
+  }
+
   logout(): void {
     this.storage.clear();
   }

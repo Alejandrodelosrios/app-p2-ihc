@@ -19,10 +19,22 @@
   <div class="record-card__care">
     <span class="record-card__label">Cuidado</span>
     <p>{{ record().care }}</p>
+    @if (record().recurrenceIntervalDays; as days) {
+      <p class="record-card__assignment record-card__recurrence">
+        <app-icon name="event_repeat" [size]="17" />
+        Se repite cada {{ days === 1 ? 'día' : days + ' días' }}
+      </p>
+    }
     @if (assignedToMe()) {
-      <p class="record-card__assignment"><app-icon name="assignment_ind" [size]="17" /> Te asignaron este cuidado</p>
+      <p class="record-card__assignment">
+        <app-icon name="assignment_ind" [size]="17" />
+        {{ personName() ? 'Te asignó ' + personName() : 'Te asignaron este cuidado' }}
+      </p>
     } @else if (record().assignedToUserId) {
-      <p class="record-card__assignment"><app-icon name="group" [size]="17" /> Asignado a otra persona</p>
+      <p class="record-card__assignment">
+        <app-icon name="group" [size]="17" />
+        {{ personName() ? 'Asignado a ' + personName() : 'Asignado a otra persona' }}
+      </p>
     }
   </div>
 

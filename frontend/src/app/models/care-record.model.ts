@@ -11,6 +11,7 @@ export interface CareRecord {
   createdAt: string;
   status: CareRecordStatus;
   assignedToUserId?: string | null;
+  recurrenceIntervalDays?: number | null;
 }
 
 export interface CreateCareRecordRequest {
@@ -18,8 +19,10 @@ export interface CreateCareRecordRequest {
   care: string;
   animalType: string;
   careDate: string;
-  assignedToUserId?: string | null;
+  assigneeEmail?: string | null;
+  recurrenceIntervalDays?: number | null;
 }
+
 export interface CareRecordFilters {
   petName?: string;
   status?: CareRecordStatus;

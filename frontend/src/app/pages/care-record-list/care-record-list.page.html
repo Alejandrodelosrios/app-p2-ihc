@@ -135,6 +135,10 @@
       <p class="status-error" role="alert">{{ statusErrorMessage() }}</p>
     }
 
+    @if (successMessage()) {
+      <p class="status-success" role="status">{{ successMessage() }}</p>
+    }
+
     <section class="records-section" aria-labelledby="assigned-records-title">
       <header class="records-section__header">
         <div>
@@ -149,6 +153,7 @@
             <app-care-record-card
               [record]="record"
               [assignedToMe]="true"
+              [personName]="personName(record, true)"
               [completing]="completingId() === record.id"
               [deleting]="deletingId() === record.id"
               (complete)="completeRecord($event)"
@@ -174,6 +179,7 @@
           @for (record of ownedRecords(); track record.id) {
             <app-care-record-card
               [record]="record"
+              [personName]="personName(record, false)"
               [completing]="completingId() === record.id"
               [deleting]="deletingId() === record.id"
               (complete)="completeRecord($event)"
