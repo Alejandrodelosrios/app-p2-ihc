@@ -2,6 +2,7 @@ import { Component, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { CareRecord } from '../../../models/care-record.model';
+import { PetSpecies } from '../../../models/pet.model';
 import { IconComponent } from '../../../shared/ui/icon/icon.component';
 
 @Component({
@@ -24,5 +25,18 @@ export class CareRecordCardComponent {
     if (confirm('¿Eliminar este cuidado? Esta acción no se puede deshacer.')) {
       this.remove.emit(this.record().id);
     }
+  }
+
+  speciesLabel(species: PetSpecies): string {
+    return ({
+      DOG: 'Perro',
+      CAT: 'Gato',
+      BIRD: 'Ave',
+      RABBIT: 'Conejo',
+      RODENT: 'Roedor',
+      REPTILE: 'Reptil',
+      FISH: 'Pez',
+      OTHER: 'Otro',
+    } satisfies Record<PetSpecies, string>)[species] ?? 'Otro';
   }
 }

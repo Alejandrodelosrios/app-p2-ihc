@@ -4,9 +4,10 @@ export type CareRecordCareType = 'VACCINE' | 'MEDICATION' | 'CONTROL' | 'OTHER';
 export interface CareRecord {
   id: string;
   userId: string;
+  petId: string;
   petName: string;
+  petSpecies: import('./pet.model').PetSpecies;
   care: string;
-  animalType: string;
   careDate: string;
   createdAt: string;
   status: CareRecordStatus;
@@ -15,15 +16,15 @@ export interface CareRecord {
 }
 
 export interface CreateCareRecordRequest {
-  petName: string;
+  petId: string;
   care: string;
-  animalType: string;
   careDate: string;
   assigneeEmail?: string | null;
   recurrenceIntervalDays?: number | null;
 }
 
 export interface CareRecordFilters {
+  petId?: string;
   petName?: string;
   status?: CareRecordStatus;
   careType?: CareRecordCareType;

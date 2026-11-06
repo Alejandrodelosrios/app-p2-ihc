@@ -10,13 +10,15 @@ import {
   Validators,
 } from '@angular/forms';
 import { HttpErrorResponse } from '@angular/common/http';
-import { ActivatedRoute, Router } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
 
 import { AuthService } from '../../core/auth/auth.service';
 import { CareRecordService } from '../../core/care/care-record';
+import { PetService } from '../../core/pets/pet.service';
 import { AuthUser } from '../../models/auth.models';
 import { CareRecord as CareRecordModel, CreateCareRecordRequest } from '../../models/care-record.model';
+import { Pet, PetSpecies } from '../../models/pet.model';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
 import { IconComponent } from '../../shared/ui/icon/icon.component';
@@ -40,6 +42,7 @@ const notPastDateValidator: ValidatorFn = (
   selector: 'app-care-record',
   imports: [
     ReactiveFormsModule,
+    RouterLink,
     ButtonComponent,
     FormFieldComponent,
     IconComponent,
@@ -50,6 +53,7 @@ const notPastDateValidator: ValidatorFn = (
 export class CareRecord {
   private readonly fb = inject(FormBuilder);
   private readonly careRecordService = inject(CareRecordService);
+  private readonly petService = inject(PetService);
   private readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
@@ -58,17 +62,18 @@ export class CareRecord {
   readonly loading = signal(false);
   readonly successMessage = signal('');
   readonly errorMessage = signal('');
+  readonly pets = signal<Pet[]>([]);
+  readonly petsLoading = signal(true);
+  readonly petsError = signal('');
   readonly editId = this.route.snapshot.paramMap.get('id');
   readonly editing = this.editId !== null;
   private readonly currentDate = new Date();
   readonly today = `${this.currentDate.getFullYear()}-${String(this.currentDate.getMonth() + 1).padStart(2, '0')}-${String(this.currentDate.getDate()).padStart(2, '0')}`;
-  readonly animalTypes = ['Perro', 'Gato', 'Loro', 'Conejo', 'Hámster', 'Pez', 'Tortuga', 'Otro'];
   readonly maxRecurrenceDays = MAX_RECURRENCE_DAYS;
 
   readonly form = this.fb.nonNullable.group({
-    petName: ['', Validators.required],
+    petId: ['', Validators.required],
     care: ['', Validators.required],
-    animalType: ['', Validators.required],
     careDate: ['', [Validators.required, notPastDateValidator]],
   });
 
@@ -89,17 +94,13 @@ export class CareRecord {
   readonly assigneeReady = signal(true);
 
   constructor() {
+    this.loadPets();
     const record = this.recordFromState();
 
     if (this.editing && record) {
-      if (!this.animalTypes.includes(record.animalType)) {
-        this.animalTypes.push(record.animalType);
-      }
-
       this.form.patchValue({
-        petName: record.petName,
+        petId: record.petId,
         care: record.care,
-        animalType: record.animalType,
         careDate: record.careDate,
       });
 
@@ -158,8 +159,11 @@ export class CareRecord {
   }
 
   submit(): void {
-    if (this.form.invalid) {
+    if (this.form.invalid || this.petsLoading() || this.pets().length === 0) {
       this.form.markAllAsTouched();
+      if (this.pets().length === 0 && !this.petsLoading()) {
+        this.errorMessage.set('Registra una mascota antes de crear un cuidado.');
+      }
       return;
     }
 
@@ -215,11 +219,11 @@ export class CareRecord {
       });
   }
 
-  petNameError(): string | null {
-    const control = this.form.controls.petName;
+  petError(): string | null {
+    const control = this.form.controls.petId;
 
     if (control.touched && control.hasError('required')) {
-      return 'Ingresa el nombre de la mascota';
+      return 'Selecciona una mascota';
     }
 
     return null;
@@ -230,16 +234,6 @@ export class CareRecord {
 
     if (control.touched && control.hasError('required')) {
       return 'Ingresa el cuidado realizado';
-    }
-
-    return null;
-  }
-
-  animalTypeError(): string | null {
-    const control = this.form.controls.animalType;
-
-    if (control.touched && control.hasError('required')) {
-      return 'Ingresa el tipo de animal';
     }
 
     return null;
@@ -322,5 +316,33 @@ export class CareRecord {
         this.assigneeResults.set(users);
         this.searchingAssignees.set(false);
       });
+  }
+
+  private loadPets(): void {
+    this.petsLoading.set(true);
+    this.petsError.set('');
+    this.petService.findAll().subscribe({
+      next: (pets) => {
+        this.pets.set(pets);
+        this.petsLoading.set(false);
+      },
+      error: () => {
+        this.petsError.set('No se pudieron cargar tus mascotas.');
+        this.petsLoading.set(false);
+      },
+    });
+  }
+
+  speciesLabel(species: PetSpecies): string {
+    return ({
+      DOG: 'Perro',
+      CAT: 'Gato',
+      BIRD: 'Ave',
+      RABBIT: 'Conejo',
+      RODENT: 'Roedor',
+      REPTILE: 'Reptil',
+      FISH: 'Pez',
+      OTHER: 'Otro',
+    } satisfies Record<PetSpecies, string>)[species] ?? 'Otro';
   }
 }

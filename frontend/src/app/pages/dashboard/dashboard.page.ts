@@ -34,7 +34,7 @@ import { IconComponent } from '../../shared/ui/icon/icon.component';
           @if (pets().length === 0) {
             <div class="empty-card"><app-icon name="pets" [size]="34" /><p>Aún no tienes mascotas registradas.</p><a routerLink="/mis-mascotas">Registrar la primera</a></div>
           } @else {
-            <div class="pets-list">@for (pet of pets(); track pet.id) { <a class="pet-item" [routerLink]="['/cuidados']" [queryParams]="{ petName: pet.name }"><span class="pet-item__icon"><app-icon name="pets" [size]="23" /></span><span><strong>{{ pet.name }}</strong><small>{{ speciesLabel(pet.species) }}</small></span><app-icon name="chevron_right" [size]="20" /></a> }</div>
+            <div class="pets-list">@for (pet of pets(); track pet.id) { <a class="pet-item" [routerLink]="['/cuidados']" [queryParams]="{ petId: pet.id }"><span class="pet-item__icon"><app-icon name="pets" [size]="23" /></span><span><strong>{{ pet.name }}</strong><small>{{ speciesLabel(pet.species) }}</small></span><app-icon name="chevron_right" [size]="20" /></a> }</div>
           }
         </section>
       }

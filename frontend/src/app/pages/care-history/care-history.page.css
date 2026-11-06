@@ -17,6 +17,76 @@
   gap: 0.45rem;
 }
 
+.history-filters {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+}
+
+.history-filters__grid {
+  display: grid;
+  gap: .8rem;
+}
+
+.history-filters label {
+  display: grid;
+  gap: .35rem;
+  color: var(--color-text-muted);
+  font-size: .85rem;
+  font-weight: 650;
+}
+
+.history-filters input,
+.history-filters select {
+  min-height: 42px;
+  padding: .6rem .7rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.history-filters__actions,
+.history-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: .7rem;
+}
+
+.history-filters button,
+.history-pagination button {
+  padding: .65rem .9rem;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.history-filters__clear {
+  background: transparent !important;
+  color: var(--color-primary) !important;
+}
+
+.history-filters button:disabled,
+.history-pagination button:disabled {
+  cursor: not-allowed;
+  opacity: .5;
+}
+
+.history-filters__note {
+  color: var(--color-text-muted);
+  font-size: .8rem;
+}
+
 .eyebrow {
   color: var(--color-primary);
   font-size: 0.8rem;
@@ -41,6 +111,11 @@
 .history-card {
   display: grid;
   gap: 0.75rem;
+}
+
+.history-card--rescheduled {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
 }
 
 .history-card__title {
@@ -84,4 +159,20 @@
   font-weight: 700;
   text-decoration: none;
   cursor: pointer;
+}
+
+.history-pagination {
+  justify-content: space-between;
+}
+
+.history-pagination span {
+  color: var(--color-text-muted);
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+@media (min-width: 42rem) {
+  .history-filters__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }

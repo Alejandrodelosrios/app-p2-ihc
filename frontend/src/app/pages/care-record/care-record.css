@@ -168,6 +168,17 @@
   font: inherit;
 }
 
+.pet-select {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font: inherit;
+}
+
 .selected-assignee,
 .assignee-results button {
   display: flex;

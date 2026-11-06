@@ -17,14 +17,32 @@
     [formGroup]="form"
     (ngSubmit)="submit()"
   >
-    <app-form-field
-      fieldId="pet-name"
-      label="Nombre de la mascota"
-      placeholder="Ej. Firulais"
-      autocomplete="off"
-      [control]="form.controls.petName"
-      [error]="petNameError()"
-    />
+    @if (petsLoading()) {
+      <p class="care-form__hint" role="status">Cargando mascotas...</p>
+    } @else if (petsError()) {
+      <div class="feedback feedback--error" role="alert">
+        <app-icon name="error" [size]="20" />
+        <span>{{ petsError() }}</span>
+      </div>
+    } @else if (pets().length === 0) {
+      <div class="feedback feedback--info" role="status">
+        <app-icon name="pets" [size]="20" />
+        <span>No tienes mascotas registradas. <a routerLink="/mis-mascotas">Registra una mascota</a> para crear cuidados.</span>
+      </div>
+    } @else {
+      <label class="assignment-search">
+        <span>Mascota</span>
+        <select class="pet-select" formControlName="petId" [attr.aria-invalid]="!!petError()">
+          <option value="" disabled>Selecciona una mascota</option>
+          @for (pet of pets(); track pet.id) {
+            <option [value]="pet.id">{{ pet.name }} — {{ speciesLabel(pet.species) }}</option>
+          }
+        </select>
+        @if (petError()) {
+          <span class="assignment-message assignment-message--error">{{ petError() }}</span>
+        }
+      </label>
+    }
 
     <app-form-field
       fieldId="care"
@@ -33,15 +51,6 @@
       autocomplete="off"
       [control]="form.controls.care"
       [error]="careError()"
-    />
-
-    <app-form-field
-      fieldId="animal-type"
-      label="Tipo de animal"
-      placeholder="Selecciona un tipo"
-      [control]="form.controls.animalType"
-      [options]="animalTypes"
-      [error]="animalTypeError()"
     />
 
     @if (canReschedule()) {
@@ -187,7 +196,7 @@
       <app-button
         type="submit"
         [loading]="loading()"
-        [disabled]="loading() || !assigneeReady()"
+        [disabled]="loading() || !assigneeReady() || petsLoading() || pets().length === 0"
       >
         {{ editing ? 'Guardar cambios' : 'Guardar cuidado' }}
       </app-button>

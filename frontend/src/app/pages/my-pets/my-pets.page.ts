@@ -84,7 +84,7 @@ const SPECIES: Array<{ value: PetSpecies; label: string }> = [
               <div class="pet-card__icon"><app-icon name="pets" [size]="28" /></div>
               <div><h2>{{ pet.name }}</h2><p>{{ speciesLabel(pet.species) }}{{ pet.breed ? ' · ' + pet.breed : '' }}</p></div>
               <div class="pet-card__actions">
-                <a [routerLink]="['/cuidados']" [queryParams]="{ petName: pet.name }">Ver cuidados</a>
+                <a [routerLink]="['/cuidados']" [queryParams]="{ petId: pet.id }">Ver cuidados</a>
                 <button type="button" (click)="editPet(pet)">Editar</button>
                 <button type="button" class="pet-card__delete" (click)="deletePet(pet)" [disabled]="deletingId() === pet.id">
                   {{ deletingId() === pet.id ? 'Eliminando...' : 'Eliminar' }}

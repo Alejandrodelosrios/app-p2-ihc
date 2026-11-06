@@ -18,6 +18,9 @@ export class CareRecordService {
   findAll(filters: CareRecordFilters = {}): Observable<CareRecord[]> {
     let params = new HttpParams();
 
+    if (filters.petId) {
+      params = params.set('petId', filters.petId);
+    }
     if (filters.petName) {
       params = params.set('petName', filters.petName);
     }

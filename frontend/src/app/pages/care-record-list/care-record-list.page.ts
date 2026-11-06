@@ -49,6 +49,7 @@ export class CareRecordListPage implements OnInit {
   readonly showMoreFilters = signal(false);
 
   readonly filterForm = this.fb.group({
+    petId: this.fb.nonNullable.control(''),
     petName: this.fb.nonNullable.control(''),
     status: this.fb.nonNullable.control<'' | CareRecordStatus>(''),
     careType: this.fb.nonNullable.control<'' | CareRecordCareType>(''),
@@ -97,6 +98,7 @@ export class CareRecordListPage implements OnInit {
 
   clearFilters(): void {
     this.filterForm.reset({
+      petId: '',
       petName: '',
       status: '',
       careType: '',
@@ -148,6 +150,7 @@ export class CareRecordListPage implements OnInit {
     const params = this.route.snapshot.queryParamMap;
 
     this.filterForm.patchValue({
+      petId: params.get('petId') ?? '',
       petName: params.get('petName') ?? '',
       status: (params.get('status') as CareRecordStatus | null) ?? '',
       careType: (params.get('careType') as CareRecordCareType | null) ?? '',
@@ -163,6 +166,7 @@ export class CareRecordListPage implements OnInit {
     this.router.navigate([], {
       relativeTo: this.route,
       queryParams: {
+        petId: value.petId || null,
         petName: value.petName || null,
         status: value.status || null,
         careType: value.careType || null,
@@ -178,6 +182,9 @@ export class CareRecordListPage implements OnInit {
     const value = this.filterForm.getRawValue();
     const filters: CareRecordFilters = {};
 
+    if (value.petId) {
+      filters.petId = value.petId;
+    }
     if (value.petName.trim()) {
       filters.petName = value.petName.trim();
     }

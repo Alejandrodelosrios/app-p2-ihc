@@ -5,6 +5,40 @@
     <p>Revisa los cuidados realizados y reprogramados.</p>
   </header>
 
+  <form class="history-filters" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
+    <div class="history-filters__grid">
+      <label>
+        <span>Mascota</span>
+        <input type="search" formControlName="petName" placeholder="Buscar mascota" />
+      </label>
+      <label>
+        <span>Cuidado</span>
+        <input type="search" formControlName="care" placeholder="Buscar cuidado" />
+      </label>
+      <label>
+        <span>Acción</span>
+        <select formControlName="action">
+          <option value="">Todas</option>
+          <option value="COMPLETED">Realizado</option>
+          <option value="RESCHEDULED">Reprogramado</option>
+        </select>
+      </label>
+      <label>
+        <span>Desde</span>
+        <input type="date" formControlName="fromDate" />
+      </label>
+      <label>
+        <span>Hasta</span>
+        <input type="date" formControlName="toDate" />
+      </label>
+    </div>
+    <div class="history-filters__actions">
+      <button type="submit">Aplicar filtros</button>
+      <button type="button" class="history-filters__clear" (click)="clearFilters()">Limpiar</button>
+    </div>
+    <p class="history-filters__note">Los filtros y la paginación se aplican localmente porque el endpoint actual devuelve todo el historial.</p>
+  </form>
+
   @if (loading()) {
     <div class="history-state">
       <app-icon name="progress_activity" [size]="32" />
@@ -23,10 +57,17 @@
       <p>Cuando realices o reprogrames un cuidado, aparecerá aquí.</p>
       <a routerLink="/cuidados">Ver cuidados</a>
     </div>
+  } @else if (filteredEntries().length === 0) {
+    <div class="history-state">
+      <app-icon name="search_off" [size]="40" />
+      <h2>Sin resultados</h2>
+      <p>No hay eventos que coincidan con los filtros.</p>
+      <button type="button" (click)="clearFilters()">Limpiar filtros</button>
+    </div>
   } @else {
     <div class="history-list">
-      @for (entry of entries(); track entry.id) {
-        <article class="history-card">
+      @for (entry of paginatedEntries(); track entry.id) {
+        <article class="history-card" [class.history-card--rescheduled]="entry.action === 'RESCHEDULED'">
           <div class="history-card__title">
             <app-icon [name]="entry.action === 'COMPLETED' ? 'check_circle' : 'event_repeat'" [size]="24" />
             <div>
@@ -52,5 +93,10 @@
         </article>
       }
     </div>
+    <nav class="history-pagination" aria-label="Paginación del historial">
+      <button type="button" (click)="previousPage()" [disabled]="currentPage() === 1">Anterior</button>
+      <span>Página {{ currentPage() }} de {{ totalPages() }}</span>
+      <button type="button" (click)="nextPage()" [disabled]="currentPage() === totalPages()">Siguiente</button>
+    </nav>
   }
 </section>
