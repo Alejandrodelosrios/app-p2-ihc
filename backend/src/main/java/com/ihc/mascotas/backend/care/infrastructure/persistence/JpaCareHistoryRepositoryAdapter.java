@@ -39,7 +39,8 @@ public class JpaCareHistoryRepositoryAdapter implements CareHistoryRepository {
                 entry.action(),
                 entry.previousCareDate(),
                 entry.currentCareDate(),
-                entry.occurredAt()
+                entry.occurredAt(),
+                entry.changeReason()
         );
     }
 
@@ -54,7 +55,8 @@ public class JpaCareHistoryRepositoryAdapter implements CareHistoryRepository {
                 entry.getAction(),
                 entry.getPreviousCareDate(),
                 entry.getCurrentCareDate(),
-                entry.getOccurredAt()
+                entry.getOccurredAt(),
+                entry.getChangeReason()
         );
     }
 }

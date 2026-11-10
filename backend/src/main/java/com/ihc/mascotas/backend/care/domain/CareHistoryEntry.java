@@ -14,6 +14,7 @@ public record CareHistoryEntry(
         CareHistoryAction action,
         LocalDate previousCareDate,
         LocalDate currentCareDate,
-        Instant occurredAt
+        Instant occurredAt,
+        String changeReason
 ) {
 }

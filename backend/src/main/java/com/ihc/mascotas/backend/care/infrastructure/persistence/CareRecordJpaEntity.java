@@ -42,11 +42,21 @@ public class CareRecordJpaEntity {
     @Column(name = "recurrence_interval_days")
     private Integer recurrenceIntervalDays;
 
+    @Column(name = "original_care_date", nullable = false)
+    private LocalDate originalCareDate;
+
+    @Column(name = "series_id")
+    private UUID seriesId;
+
+    @Column(name = "change_reason")
+    private String changeReason;
+
     protected CareRecordJpaEntity() {}
 
     public CareRecordJpaEntity(UUID id, UUID userId, UUID petId, String care, LocalDate careDate,
                                Instant createdAt, CareRecordStatus status, UUID assignedToUserId,
-                               Integer recurrenceIntervalDays) {
+                               Integer recurrenceIntervalDays, LocalDate originalCareDate, UUID seriesId,
+                               String changeReason) {
         this.id = id;
         this.userId = userId;
         this.petId = petId;
@@ -56,6 +66,9 @@ public class CareRecordJpaEntity {
         this.status = status;
         this.assignedToUserId = assignedToUserId;
         this.recurrenceIntervalDays = recurrenceIntervalDays;
+        this.originalCareDate = originalCareDate;
+        this.seriesId = seriesId;
+        this.changeReason = changeReason;
     }
 
     public UUID getId() { return id; }
@@ -67,4 +80,7 @@ public class CareRecordJpaEntity {
     public CareRecordStatus getStatus() { return status; }
     public UUID getAssignedToUserId() { return assignedToUserId; }
     public Integer getRecurrenceIntervalDays() { return recurrenceIntervalDays; }
+    public LocalDate getOriginalCareDate() { return originalCareDate; }
+    public UUID getSeriesId() { return seriesId; }
+    public String getChangeReason() { return changeReason; }
 }

@@ -13,6 +13,12 @@ import com.ihc.mascotas.backend.care.domain.CareRecordStatus;
 public interface SpringDataCareRecordRepository extends JpaRepository<CareRecordJpaEntity, UUID> {
     List<CareRecordJpaEntity> findByUserId(UUID userId);
 
+    List<CareRecordJpaEntity> findBySeriesIdAndStatusInAndCareDateAfter(
+            UUID seriesId,
+            List<CareRecordStatus> statuses,
+            LocalDate date
+    );
+
     @Query("""
             SELECT record
             FROM CareRecordJpaEntity record

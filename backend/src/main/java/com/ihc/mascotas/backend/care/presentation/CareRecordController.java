@@ -67,6 +67,21 @@ public class CareRecordController {
         return toResponse(careRecordService.complete(principal.getName(), id));
     }
 
+    @PutMapping("/{id}/reschedule")
+    public CareRecordResponse reschedule(
+            Principal principal,
+            @PathVariable UUID id,
+            @Valid @RequestBody RescheduleCareRecordRequest request
+    ) {
+        return toResponse(careRecordService.reschedule(
+                principal.getName(),
+                id,
+                request.newCareDate(),
+                request.reason(),
+                request.scope()
+        ));
+    }
+
     @PutMapping("/{id}")
     public CareRecordResponse update(
             Principal principal,
@@ -104,7 +119,10 @@ public class CareRecordController {
                 record.createdAt(),
                 record.status(),
                 record.assignedToUserId(),
-                record.recurrenceIntervalDays()
+                record.recurrenceIntervalDays(),
+                record.originalCareDate(),
+                record.seriesId(),
+                record.changeReason()
         );
     }
 }

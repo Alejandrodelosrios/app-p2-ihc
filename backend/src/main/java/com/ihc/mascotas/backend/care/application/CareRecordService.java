@@ -73,7 +73,10 @@ public class CareRecordService {
                 Instant.now(),
                 CareRecordStatus.PENDING,
                 assigneeId,
-                recurrenceIntervalDays
+                recurrenceIntervalDays,
+                careDate,
+                recurrenceIntervalDays == null ? null : UUID.randomUUID(),
+                null
         );
 
         return toView(careRecordRepository.save(record), pet);
@@ -122,6 +125,10 @@ public class CareRecordService {
         if (record.status() == CareRecordStatus.COMPLETED) {
             throw new ConflictException("El cuidado ya fue realizado");
         }
+        if (record.status() == CareRecordStatus.CANCELLED
+                || record.careDate().isBefore(LocalDate.now())) {
+            throw new NotAllowedException("Past or cancelled care records cannot be modified");
+        }
 
         // Sin filtro de dueño ni de activa: el asignado no es dueño y la mascota puede estar desactivada.
         Pet pet = findPetIncludingInactive(record.petId());
@@ -144,7 +151,10 @@ public class CareRecordService {
                 record.createdAt(),
                 nextStatus,
                 record.assignedToUserId(),
-                record.recurrenceIntervalDays()
+                record.recurrenceIntervalDays(),
+                record.originalCareDate(),
+                record.seriesId(),
+                record.changeReason()
         );
 
         CareRecord saved = careRecordRepository.save(updated);
@@ -158,7 +168,8 @@ public class CareRecordService {
                 CareHistoryAction.COMPLETED,
                 null,
                 completionDate,
-                Instant.now()
+                Instant.now(),
+                null
         ));
         return toView(saved, pet);
     }
@@ -188,8 +199,18 @@ public class CareRecordService {
                 recurrenceIntervalDays
         );
 
+        if (record.careDate().isBefore(LocalDate.now())
+                && (dateChanged || petChanged || recurrenceChanged)) {
+            throw new NotAllowedException("Past care records cannot be modified");
+        }
+
         if (record.status() == CareRecordStatus.COMPLETED && dateChanged) {
             throw new NotAllowedException("No puedes reprogramar un cuidado ya hecho");
+        }
+        if (dateChanged) {
+            throw new NotAllowedException(
+                    "Date changes require the reschedule endpoint and a reason"
+            );
         }
 
         if (record.status() == CareRecordStatus.COMPLETED && recurrenceChanged) {
@@ -221,7 +242,10 @@ public class CareRecordService {
                 record.createdAt(),
                 record.status(),
                 assigneeId,
-                recurrenceIntervalDays
+                recurrenceIntervalDays,
+                record.originalCareDate(),
+                record.seriesId(),
+                record.changeReason()
         );
 
         CareRecord saved = careRecordRepository.save(updated);
@@ -237,11 +261,101 @@ public class CareRecordService {
                     CareHistoryAction.RESCHEDULED,
                     record.careDate(),
                     updated.careDate(),
-                    Instant.now()
+                    Instant.now(),
+                    null
             ));
         }
 
         return toView(saved, pet);
+    }
+
+    @Transactional
+    public CareRecordView reschedule(
+            String email,
+            UUID id,
+            LocalDate newCareDate,
+            String reason,
+            String scope
+    ) {
+        if (reason == null || reason.isBlank()) {
+            throw new NotAllowedException("The rescheduling reason is required");
+        }
+        validateCareDate(newCareDate);
+        if (!"single".equals(scope) && !"future".equals(scope)) {
+            throw new NotAllowedException("The rescheduling scope is invalid");
+        }
+
+        User user = findUser(email);
+        CareRecord record = careRecordRepository.findById(id)
+                .filter(careRecord -> careRecord.userId().equals(user.id()))
+                .orElseThrow(() -> new NotFoundException("Care record not found"));
+
+        if (record.status() == CareRecordStatus.COMPLETED
+                || record.status() == CareRecordStatus.CANCELLED
+                || record.careDate().isBefore(LocalDate.now())) {
+            throw new NotAllowedException("Past or completed care records cannot be rescheduled");
+        }
+
+        Pet pet = findPetIncludingInactive(record.petId());
+        long difference = newCareDate.toEpochDay() - record.careDate().toEpochDay();
+        CareRecord saved = saveRescheduled(record, newCareDate, reason, user.id(), pet);
+
+        if ("future".equals(scope) && record.recurrenceIntervalDays() != null
+                && record.seriesId() != null) {
+            for (CareRecord future : careRecordRepository.findPendingBySeriesIdAfter(
+                    record.seriesId(), LocalDate.now())) {
+                if (future.id().equals(record.id())) {
+                    continue;
+                }
+                saveRescheduled(
+                        future,
+                        future.careDate().plusDays(difference),
+                        reason,
+                        user.id(),
+                        findPetIncludingInactive(future.petId())
+                );
+            }
+        }
+
+        return toView(saved, pet);
+    }
+
+    private CareRecord saveRescheduled(
+            CareRecord record,
+            LocalDate newCareDate,
+            String reason,
+            UUID userId,
+            Pet pet
+    ) {
+        CareRecord updated = new CareRecord(
+                record.id(),
+                record.userId(),
+                record.petId(),
+                record.care(),
+                newCareDate,
+                record.createdAt(),
+                CareRecordStatus.RESCHEDULED,
+                record.assignedToUserId(),
+                record.recurrenceIntervalDays(),
+                record.originalCareDate(),
+                record.seriesId(),
+                reason.trim()
+        );
+        CareRecord saved = careRecordRepository.save(updated);
+        careHistoryRepository.save(new CareHistoryEntry(
+                UUID.randomUUID(),
+                userId,
+                record.id(),
+                pet.id(),
+                pet.name(),
+                record.care(),
+                CareHistoryAction.RESCHEDULED,
+                record.careDate(),
+                newCareDate,
+                Instant.now(),
+                reason.trim()
+        ));
+        return saved;
     }
 
     @Transactional
@@ -251,6 +365,12 @@ public class CareRecordService {
         CareRecord record = careRecordRepository.findById(id)
                 .filter(careRecord -> careRecord.userId().equals(user.id()))
                 .orElseThrow(() -> new NotFoundException("Cuidado no encontrado"));
+
+        if (record.status() == CareRecordStatus.COMPLETED
+                || record.status() == CareRecordStatus.CANCELLED
+                || record.careDate().isBefore(LocalDate.now())) {
+            throw new NotAllowedException("Past or completed care records cannot be deleted");
+        }
 
         careRecordRepository.deleteById(record.id());
     }

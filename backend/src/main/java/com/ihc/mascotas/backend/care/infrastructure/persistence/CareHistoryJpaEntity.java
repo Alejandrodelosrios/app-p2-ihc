@@ -46,6 +46,9 @@ public class CareHistoryJpaEntity {
     @Column(name = "occurred_at", nullable = false)
     private Instant occurredAt;
 
+    @Column(name = "change_reason")
+    private String changeReason;
+
     protected CareHistoryJpaEntity() {
     }
 
@@ -59,7 +62,8 @@ public class CareHistoryJpaEntity {
             CareHistoryAction action,
             LocalDate previousCareDate,
             LocalDate currentCareDate,
-            Instant occurredAt
+            Instant occurredAt,
+            String changeReason
     ) {
         this.id = id;
         this.userId = userId;
@@ -71,6 +75,7 @@ public class CareHistoryJpaEntity {
         this.previousCareDate = previousCareDate;
         this.currentCareDate = currentCareDate;
         this.occurredAt = occurredAt;
+        this.changeReason = changeReason;
     }
 
     public UUID getId() { return id; }
@@ -83,4 +88,5 @@ public class CareHistoryJpaEntity {
     public LocalDate getPreviousCareDate() { return previousCareDate; }
     public LocalDate getCurrentCareDate() { return currentCareDate; }
     public Instant getOccurredAt() { return occurredAt; }
+    public String getChangeReason() { return changeReason; }
 }

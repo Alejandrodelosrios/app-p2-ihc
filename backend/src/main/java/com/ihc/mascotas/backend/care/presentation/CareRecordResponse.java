@@ -19,6 +19,9 @@ public record CareRecordResponse(
         Instant createdAt,
         CareRecordStatus status,
         UUID assignedToUserId,
-        Integer recurrenceIntervalDays
+        Integer recurrenceIntervalDays,
+        LocalDate originalCareDate,
+        UUID seriesId,
+        String changeReason
 ) {
 }

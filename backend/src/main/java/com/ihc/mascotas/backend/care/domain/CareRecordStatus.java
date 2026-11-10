@@ -2,5 +2,7 @@ package com.ihc.mascotas.backend.care.domain;
 
 public enum CareRecordStatus {
     PENDING,
-    COMPLETED
+    COMPLETED,
+    RESCHEDULED,
+    CANCELLED
 }

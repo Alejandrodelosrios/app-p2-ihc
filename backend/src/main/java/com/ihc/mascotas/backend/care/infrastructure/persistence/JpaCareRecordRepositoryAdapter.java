@@ -61,6 +61,17 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
     }
 
     @Override
+    public List<CareRecord> findPendingBySeriesIdAfter(UUID seriesId, LocalDate date) {
+        return repository.findBySeriesIdAndStatusInAndCareDateAfter(
+                        seriesId,
+                        List.of(CareRecordStatus.PENDING, CareRecordStatus.RESCHEDULED),
+                        date)
+                .stream()
+                .map(this::toDomain)
+                .toList();
+    }
+
+    @Override
     public void deleteById(UUID id) {
         repository.deleteById(id);
     }
@@ -75,7 +86,10 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
                 careRecord.createdAt(),
                 careRecord.status(),
                 careRecord.assignedToUserId(),
-                careRecord.recurrenceIntervalDays()
+                careRecord.recurrenceIntervalDays(),
+                careRecord.originalCareDate(),
+                careRecord.seriesId(),
+                careRecord.changeReason()
             );
     }
 
@@ -89,7 +103,10 @@ public class JpaCareRecordRepositoryAdapter implements CareRecordRepository {
                 careRecord.getCreatedAt(),
                 careRecord.getStatus(),
                 careRecord.getAssignedToUserId(),
-                careRecord.getRecurrenceIntervalDays()
+                careRecord.getRecurrenceIntervalDays(),
+                careRecord.getOriginalCareDate(),
+                careRecord.getSeriesId(),
+                careRecord.getChangeReason()
             );
     }
 }

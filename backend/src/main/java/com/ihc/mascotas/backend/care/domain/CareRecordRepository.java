@@ -22,5 +22,7 @@ public interface CareRecordRepository {
 
     Optional<CareRecord> findById(UUID id);
 
+    List<CareRecord> findPendingBySeriesIdAfter(UUID seriesId, LocalDate date);
+
     void deleteById(UUID id);
 }
