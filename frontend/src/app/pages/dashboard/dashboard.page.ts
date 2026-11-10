@@ -23,6 +23,15 @@ import { IconComponent } from '../../shared/ui/icon/icon.component';
       } @else if (errorMessage()) {
         <div class="state-card state-card--error"><app-icon name="error" [size]="32" /><p>{{ errorMessage() }}</p><button type="button" (click)="loadDashboard()">Reintentar</button></div>
       } @else {
+        <section class="quick-access" aria-labelledby="quick-access-title">
+          <h2 id="quick-access-title">Accesos rápidos</h2>
+          <div class="quick-access__grid">
+            <a routerLink="/cuidados/nuevo"><app-icon name="add_circle" [size]="26" /><span>Registrar cuidado</span></a>
+            <a routerLink="/mis-mascotas"><app-icon name="pets" [size]="26" /><span>Mis mascotas</span></a>
+            <a routerLink="/cuidados"><app-icon name="checklist" [size]="26" /><span>Ver cuidados</span></a>
+            <a routerLink="/historial"><app-icon name="history" [size]="26" /><span>Historial</span></a>
+          </div>
+        </section>
         <section class="summary-grid" aria-label="Resumen de cuidados">
           <article><span>Mascotas</span><strong>{{ pets().length }}</strong></article>
           <article><span>Cuidados pendientes</span><strong>{{ pendingCount() }}</strong></article>
@@ -50,8 +59,9 @@ import { IconComponent } from '../../shared/ui/icon/icon.component';
     .dashboard__actions a { padding: .7rem .85rem; border-radius: var(--radius-md); background: var(--color-primary); color: var(--color-on-primary); }
     .summary-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .75rem; } .summary-grid article { display: grid; gap: .35rem; padding: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); } .summary-grid span { color: var(--color-text-muted); font-size: .85rem; } .summary-grid strong { font-size: 1.7rem; }
     .pets-section { display: grid; gap: 1rem; } .section-heading a { font-size: .9rem; } .pets-list { display: grid; gap: .65rem; } .pet-item { display: flex; align-items: center; gap: .75rem; padding: .85rem 1rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); } .pet-item span:nth-child(2) { display: grid; flex: 1; gap: .2rem; } .pet-item small { color: var(--color-text-muted); } .pet-item__icon { display: grid; place-items: center; width: 2.5rem; height: 2.5rem; border-radius: .8rem; color: var(--color-primary); background: var(--color-primary-soft); }
+    .quick-access { display: grid; gap: .75rem; } .quick-access h2 { font-size: 1.15rem; } .quick-access__grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: .65rem; } .quick-access__grid a { display: grid; justify-items: center; gap: .4rem; padding: 1rem .5rem; border: 1px solid var(--color-border); border-radius: var(--radius-lg); background: var(--color-surface); text-align: center; font-size: .9rem; } .quick-access__grid a:hover { background: var(--color-primary-soft); }
     .empty-card, .state-card { display: grid; place-items: center; gap: .5rem; padding: 2rem 1rem; border: 1px dashed var(--color-border-strong); border-radius: var(--radius-xl); color: var(--color-text-muted); text-align: center; } .empty-card p { margin: 0; } .state-card { min-height: 220px; } .state-card--error { color: var(--color-danger); } .state-card button, .empty-card a { border: 0; border-radius: var(--radius-md); padding: .65rem .9rem; background: var(--color-primary); color: var(--color-on-primary); cursor: pointer; }
-    @media (min-width: 42rem) { .summary-grid { grid-template-columns: repeat(4, 1fr); } }
+    @media (min-width: 42rem) { .summary-grid, .quick-access__grid { grid-template-columns: repeat(4, 1fr); } }
   `],
 })
 export class DashboardPage implements OnInit {

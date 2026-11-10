@@ -9,4 +9,5 @@ export interface CareHistoryEntry {
   previousCareDate: string | null;
   currentCareDate: string;
   occurredAt: string;
+  performedByName?: string | null;
 }

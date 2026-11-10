@@ -3,19 +3,21 @@
     <a class="shell-brand" routerLink="/dashboard" aria-label="Ir al dashboard">
       <app-icon name="pets" [size]="24" /><span>Mascotas al Día</span>
     </a>
-    <a routerLink="/dashboard" routerLinkActive="menu__link--active" class="menu__link" (click)="closeMenu()">
-      Dashboard
-    </a>
-    <a routerLink="/cuidados" routerLinkActive="menu__link--active" class="menu__link" (click)="closeMenu()">
-      Cuidados
-    </a>
+
+    <nav class="shell-nav" aria-label="Navegación principal">
+      <a routerLink="/dashboard" routerLinkActive="shell-nav__link--active" class="shell-nav__link">Dashboard</a>
+      <a routerLink="/mis-mascotas" routerLinkActive="shell-nav__link--active" class="shell-nav__link">Mascotas</a>
+      <a routerLink="/cuidados" routerLinkActive="shell-nav__link--active" class="shell-nav__link">Cuidados</a>
+      <a routerLink="/historial" routerLinkActive="shell-nav__link--active" class="shell-nav__link">Historial</a>
+    </nav>
+
     <div class="shell-actions">
       <app-theme-toggle />
       <div class="menu-wrap">
         <button class="menu-button" type="button" (click)="toggleMenu($event)" [attr.aria-expanded]="menuOpen()"
           aria-label="Abrir menú"><app-icon name="menu" [size]="24" /></button>
         @if (menuOpen()) {
-        <nav class="menu" (click)="$event.stopPropagation()" aria-label="Navegación principal">
+        <nav class="menu" (click)="$event.stopPropagation()" aria-label="Menú de usuario">
           <div class="menu__user">
             <strong>{{ auth.user()?.fullName }}</strong>
             <span>{{ auth.user()?.email }}</span>
@@ -34,5 +36,21 @@
       </div>
     </div>
   </header>
+
   <main class="shell-content"><router-outlet /></main>
+
+  <nav class="bottom-nav" aria-label="Navegación rápida">
+    <a routerLink="/dashboard" routerLinkActive="bottom-nav__link--active" class="bottom-nav__link">
+      <app-icon name="home" [size]="24" /><span>Inicio</span>
+    </a>
+    <a routerLink="/mis-mascotas" routerLinkActive="bottom-nav__link--active" class="bottom-nav__link">
+      <app-icon name="pets" [size]="24" /><span>Mascotas</span>
+    </a>
+    <a routerLink="/cuidados" routerLinkActive="bottom-nav__link--active" class="bottom-nav__link">
+      <app-icon name="checklist" [size]="24" /><span>Cuidados</span>
+    </a>
+    <a routerLink="/historial" routerLinkActive="bottom-nav__link--active" class="bottom-nav__link">
+      <app-icon name="history" [size]="24" /><span>Historial</span>
+    </a>
+  </nav>
 </div>

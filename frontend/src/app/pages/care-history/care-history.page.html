@@ -89,6 +89,13 @@
             </p>
           }
 
+          @if (entry.performedByName) {
+            <p class="history-card__person">
+              <app-icon name="person" [size]="17" />
+              {{ entry.action === 'COMPLETED' ? 'Realizado por' : 'Reprogramado por' }} {{ entry.performedByName }}
+            </p>
+          }
+
           <time>{{ entry.occurredAt | date:'dd/MM/yyyy HH:mm' }}</time>
         </article>
       }

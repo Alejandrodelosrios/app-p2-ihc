@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import { CareRecord } from '../../../models/care-record.model';
@@ -20,6 +20,18 @@ export class CareRecordCardComponent {
   readonly personName = input<string | null>(null);
   readonly complete = output<string>();
   readonly remove = output<string>();
+
+  readonly overdue = computed(() => {
+    const record = this.record();
+    return record.status === 'PENDING' && record.careDate < this.todayLocal();
+  });
+
+  private todayLocal(): string {
+    const now = new Date();
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const day = String(now.getDate()).padStart(2, '0');
+    return `${now.getFullYear()}-${month}-${day}`;
+  }
 
   confirmDelete(): void {
     if (confirm('¿Eliminar este cuidado? Esta acción no se puede deshacer.')) {

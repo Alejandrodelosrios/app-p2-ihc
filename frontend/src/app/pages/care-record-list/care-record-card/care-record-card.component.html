@@ -1,4 +1,4 @@
-<article class="record-card" [class.record-card--completed]="record().status === 'COMPLETED'">
+<article class="record-card" [class.record-card--completed]="record().status === 'COMPLETED'" [class.record-card--overdue]="overdue()">
   <div class="record-card__header">
     <div class="record-card__pet">
       <span class="record-card__icon">
@@ -42,9 +42,10 @@
     <span
       class="record-card__status"
       [class.record-card__status--completed]="record().status === 'COMPLETED'"
+      [class.record-card__status--overdue]="overdue()"
     >
-      <app-icon [name]="record().status === 'COMPLETED' ? 'task_alt' : 'schedule'" [size]="18" />
-      {{ record().status === 'COMPLETED' ? 'Realizado' : 'Pendiente' }}
+      <app-icon [name]="record().status === 'COMPLETED' ? 'task_alt' : overdue() ? 'warning' : 'schedule'" [size]="18" />
+      {{ record().status === 'COMPLETED' ? 'Realizado' : overdue() ? 'Vencido' : 'Pendiente' }}
     </span>
 
     <div class="record-card__actions">

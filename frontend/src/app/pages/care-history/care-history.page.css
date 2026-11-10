@@ -139,6 +139,14 @@
   font-weight: 700;
 }
 
+.history-card__person {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
 .history-state {
   min-height: 240px;
   display: grid;
