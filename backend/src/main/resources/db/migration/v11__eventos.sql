@@ -1,0 +1,7 @@
+CREATE TABLE eventos (
+  id BIGSERIAL PRIMARY KEY,
+  evento VARCHAR(60) NOT NULL,
+  props JSONB NOT NULL DEFAULT '{}',
+  sesion VARCHAR(20),
+  fecha TIMESTAMPTZ NOT NULL DEFAULT now()
+);
