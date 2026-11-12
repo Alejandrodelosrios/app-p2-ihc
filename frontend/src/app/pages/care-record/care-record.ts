@@ -13,6 +13,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, debounceTime, distinctUntilChanged, finalize, map, of, switchMap, tap } from 'rxjs';
 
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 import { AuthService } from '../../core/auth/auth.service';
 import { CareRecordService } from '../../core/care/care-record';
 import { PetService } from '../../core/pets/pet.service';
@@ -53,6 +54,7 @@ const notPastDateValidator: ValidatorFn = (
 export class CareRecord {
   private readonly fb = inject(FormBuilder);
   private readonly careRecordService = inject(CareRecordService);
+  private readonly analytics = inject(AnalyticsService);
   private readonly petService = inject(PetService);
   private readonly authService = inject(AuthService);
   private readonly route = inject(ActivatedRoute);
@@ -115,6 +117,11 @@ export class CareRecord {
     }
 
     this.setupAssigneeSearch();
+
+    // Evento de inicio: al empezar a registrar un cuidado nuevo (no al editar).
+    if (!this.editing) {
+      this.analytics.track('cuidado_abierto', { modo: 'nuevo' });
+    }
   }
 
   /** `history.state` puede ser null (recarga de página, pruebas), por eso se lee de forma segura. */
@@ -207,6 +214,11 @@ export class CareRecord {
             return;
           }
 
+          // Evento de éxito: solo después de que el backend confirmó el guardado.
+          this.analytics.track('cuidado_completado', {
+            recurrente: String(recurrenceActive),
+            asignado: String(this.assignToOther()),
+          });
           this.successMessage.set('Cuidado registrado correctamente');
           this.router.navigate(['/cuidados']);
         },

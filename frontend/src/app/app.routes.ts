@@ -101,6 +101,14 @@ export const routes: Routes = [
       },
 
       {
+        path: 'analitica',
+        loadComponent: () =>
+          import('./pages/analytics/analytics.page').then(
+            (m) => m.AnalyticsPage,
+          ),
+      },
+
+      {
         path: 'cambiar-contrasena',
         loadComponent: () =>
           import('./pages/change-password/change-password.page').then(
