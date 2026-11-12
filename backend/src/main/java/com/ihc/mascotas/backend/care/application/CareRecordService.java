@@ -122,10 +122,11 @@ public class CareRecordService {
                 .filter(careRecord -> isOwnerOrAssignee(careRecord, user.id()))
                 .orElseThrow(() -> new ForbiddenException("No tienes permiso para completar este cuidado"));
 
-        if (record.status() == CareRecordStatus.COMPLETED) {
+        if (record.status() == CareRecordStatus.COMPLETED
+                || record.status() == CareRecordStatus.COMPLETED_LATE) {
             throw new ConflictException("El cuidado ya fue realizado");
         }
-        if (record.status() == CareRecordStatus.CANCELLED
+        if (isFinished(record.status())
                 || record.careDate().isBefore(LocalDate.now())) {
             throw new NotAllowedException("Past or cancelled care records cannot be modified");
         }
@@ -172,6 +173,119 @@ public class CareRecordService {
                 null
         ));
         return toView(saved, pet);
+    }
+
+    /**
+     * Cuidado vencido realizado tarde: guarda la fecha real en el historial.
+     * En recurrentes la próxima fecha sale de la fecha PLANIFICADA, no de la real.
+     * Solo quien gestiona el cuidado (su creador) puede hacerlo.
+     */
+    @Transactional
+    public CareRecordView completeLate(String email, UUID id, LocalDate completedOn) {
+        User user = findUser(email);
+        CareRecord record = findOverdueForManager(user, id);
+
+        LocalDate today = LocalDate.now();
+        LocalDate actualDate = completedOn == null ? today : completedOn;
+        if (actualDate.isAfter(today)) {
+            throw new NotAllowedException("La fecha real no puede ser futura");
+        }
+        if (actualDate.isBefore(record.careDate())) {
+            throw new NotAllowedException("La fecha real no puede ser anterior a la fecha planificada");
+        }
+
+        Pet pet = findPetIncludingInactive(record.petId());
+        CareRecord saved = careRecordRepository.save(
+                closeOverdue(record, CareRecordStatus.COMPLETED_LATE, null));
+        careHistoryRepository.save(new CareHistoryEntry(
+                UUID.randomUUID(),
+                user.id(),
+                record.id(),
+                pet.id(),
+                pet.name(),
+                record.care(),
+                CareHistoryAction.COMPLETED_LATE,
+                record.careDate(),      // fecha planificada
+                actualDate,             // fecha real
+                Instant.now(),
+                null
+        ));
+        return toView(saved, pet);
+    }
+
+    /** Cuidado vencido omitido: el motivo es obligatorio y queda en el historial. */
+    @Transactional
+    public CareRecordView skip(String email, UUID id, String reason) {
+        if (reason == null || reason.isBlank()) {
+            throw new NotAllowedException("El motivo de la omisión es obligatorio");
+        }
+        User user = findUser(email);
+        CareRecord record = findOverdueForManager(user, id);
+
+        String cleanReason = reason.trim();
+        Pet pet = findPetIncludingInactive(record.petId());
+        CareRecord saved = careRecordRepository.save(
+                closeOverdue(record, CareRecordStatus.SKIPPED, cleanReason));
+        careHistoryRepository.save(new CareHistoryEntry(
+                UUID.randomUUID(),
+                user.id(),
+                record.id(),
+                pet.id(),
+                pet.name(),
+                record.care(),
+                CareHistoryAction.SKIPPED,
+                record.careDate(),
+                null,
+                Instant.now(),
+                cleanReason
+        ));
+        return toView(saved, pet);
+    }
+
+    private CareRecord findOverdueForManager(User user, UUID id) {
+        CareRecord record = careRecordRepository.findById(id)
+                .filter(careRecord -> isOwnerOrAssignee(careRecord, user.id()))
+                .orElseThrow(() -> new NotFoundException("Cuidado no encontrado"));
+
+        if (!record.userId().equals(user.id())) {
+            throw new ForbiddenException(
+                    "Solo quien gestiona el cuidado puede resolver un cuidado vencido");
+        }
+        if (isFinished(record.status())) {
+            throw new ConflictException("El cuidado ya fue resuelto");
+        }
+        if (!record.careDate().isBefore(LocalDate.now())) {
+            throw new NotAllowedException("Solo se pueden resolver cuidados vencidos");
+        }
+        return record;
+    }
+
+    /** Recurrente: vuelve a PENDING con fecha planificada + intervalo. Único: queda cerrado. */
+    private CareRecord closeOverdue(CareRecord record, CareRecordStatus finalStatus, String reason) {
+        boolean recurring = record.recurrenceIntervalDays() != null;
+        return new CareRecord(
+                record.id(),
+                record.userId(),
+                record.petId(),
+                record.care(),
+                recurring
+                        ? record.careDate().plusDays(record.recurrenceIntervalDays())
+                        : record.careDate(),
+                record.createdAt(),
+                recurring ? CareRecordStatus.PENDING : finalStatus,
+                record.assignedToUserId(),
+                record.recurrenceIntervalDays(),
+                record.originalCareDate(),
+                record.seriesId(),
+                recurring ? null : reason
+        );
+    }
+
+    private static boolean isFinished(CareRecordStatus status) {
+        return status == CareRecordStatus.COMPLETED
+                || status == CareRecordStatus.COMPLETED_LATE
+                || status == CareRecordStatus.SKIPPED
+                || status == CareRecordStatus.CANCELLED;
     }
 
     @Transactional
@@ -290,8 +404,7 @@ public class CareRecordService {
                 .filter(careRecord -> careRecord.userId().equals(user.id()))
                 .orElseThrow(() -> new NotFoundException("Care record not found"));
 
-        if (record.status() == CareRecordStatus.COMPLETED
-                || record.status() == CareRecordStatus.CANCELLED
+        if (isFinished(record.status())
                 || record.careDate().isBefore(LocalDate.now())) {
             throw new NotAllowedException("Past or completed care records cannot be rescheduled");
         }
@@ -366,8 +479,7 @@ public class CareRecordService {
                 .filter(careRecord -> careRecord.userId().equals(user.id()))
                 .orElseThrow(() -> new NotFoundException("Cuidado no encontrado"));
 
-        if (record.status() == CareRecordStatus.COMPLETED
-                || record.status() == CareRecordStatus.CANCELLED
+        if (isFinished(record.status())
                 || record.careDate().isBefore(LocalDate.now())) {
             throw new NotAllowedException("Past or completed care records cannot be deleted");
         }
