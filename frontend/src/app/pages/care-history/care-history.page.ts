@@ -91,4 +91,22 @@ export class CareHistoryPage implements OnInit {
   nextPage(): void {
     this.currentPage.update((page) => Math.min(this.totalPages(), page + 1));
   }
+
+  actionLabel(action: CareHistoryEntry['action']): string {
+    return ({
+      COMPLETED: 'Realizado',
+      RESCHEDULED: 'Reprogramado',
+      COMPLETED_LATE: 'Realizado tarde',
+      SKIPPED: 'Omitido',
+    } satisfies Record<CareHistoryEntry['action'], string>)[action];
+  }
+
+  actionIcon(action: CareHistoryEntry['action']): string {
+    return ({
+      COMPLETED: 'check_circle',
+      RESCHEDULED: 'event_repeat',
+      COMPLETED_LATE: 'event_available',
+      SKIPPED: 'do_not_disturb_on',
+    } satisfies Record<CareHistoryEntry['action'], string>)[action];
+  }
 }

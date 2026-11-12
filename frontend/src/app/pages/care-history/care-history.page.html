@@ -2,7 +2,7 @@
   <header>
     <p class="eyebrow">Historial</p>
     <h1>Actividad de cuidados</h1>
-    <p>Revisa los cuidados realizados y reprogramados.</p>
+    <p>Revisa los cuidados realizados, reprogramados y omitidos.</p>
   </header>
 
   <form class="history-filters" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
@@ -21,6 +21,8 @@
           <option value="">Todas</option>
           <option value="COMPLETED">Realizado</option>
           <option value="RESCHEDULED">Reprogramado</option>
+          <option value="COMPLETED_LATE">Realizado tarde</option>
+          <option value="SKIPPED">Omitido</option>
         </select>
       </label>
       <label>
@@ -69,9 +71,9 @@
       @for (entry of paginatedEntries(); track entry.id) {
         <article class="history-card" [class.history-card--rescheduled]="entry.action === 'RESCHEDULED'">
           <div class="history-card__title">
-            <app-icon [name]="entry.action === 'COMPLETED' ? 'check_circle' : 'event_repeat'" [size]="24" />
+            <app-icon [name]="actionIcon(entry.action)" [size]="24" />
             <div>
-              <strong>{{ entry.action === 'COMPLETED' ? 'Realizado' : 'Reprogramado' }}</strong>
+              <strong>{{ actionLabel(entry.action) }}</strong>
               <span>{{ entry.petName }}</span>
             </div>
           </div>
@@ -83,6 +85,16 @@
               {{ entry.previousCareDate | date:'dd/MM/yyyy':'UTC' }} →
               {{ entry.currentCareDate | date:'dd/MM/yyyy':'UTC' }}
             </p>
+          } @else if (entry.action === 'COMPLETED_LATE') {
+            <p class="history-card__result">
+              Planificado el {{ entry.previousCareDate | date:'dd/MM/yyyy':'UTC' }} ·
+              realizado el {{ entry.currentCareDate | date:'dd/MM/yyyy':'UTC' }}
+            </p>
+          } @else if (entry.action === 'SKIPPED') {
+            <p class="history-card__result">
+              Planificado el {{ entry.previousCareDate | date:'dd/MM/yyyy':'UTC' }}
+              @if (entry.changeReason) { · Motivo: {{ entry.changeReason }} }
+            </p>
           } @else {
             <p class="history-card__result">
               Realizado el {{ entry.currentCareDate | date:'dd/MM/yyyy':'UTC' }}
@@ -92,7 +104,7 @@
           @if (entry.performedByName) {
             <p class="history-card__person">
               <app-icon name="person" [size]="17" />
-              {{ entry.action === 'COMPLETED' ? 'Realizado por' : 'Reprogramado por' }} {{ entry.performedByName }}
+              {{ actionLabel(entry.action) }} por {{ entry.performedByName }}
             </p>
           }
 
