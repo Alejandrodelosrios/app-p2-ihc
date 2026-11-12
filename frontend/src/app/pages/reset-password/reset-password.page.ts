@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 import { ApiError } from '../../models/auth.models';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -44,6 +45,7 @@ import { ThemeToggleComponent } from '../../shared/ui/theme-toggle/theme-toggle.
 })
 export class ResetPasswordPage {
   private readonly auth = inject(AuthService);
+  private readonly analytics = inject(AnalyticsService);
   private readonly route = inject(ActivatedRoute);
   readonly token = this.route.snapshot.queryParamMap.get('token');
   readonly submitting = signal(false);
@@ -69,7 +71,10 @@ export class ResetPasswordPage {
     this.auth.confirmPasswordReset({ token: this.token, newPassword: this.form.controls.password.value })
       .pipe(finalize(() => this.submitting.set(false)))
       .subscribe({
-        next: () => this.completed.set(true),
+        next: () => {
+          this.analytics.track('contrasena_restablecida');
+          this.completed.set(true);
+        },
         error: (error: HttpErrorResponse) => this.serverError.set((error.error as ApiError)?.message || 'No se pudo restablecer la contraseña.'),
       });
   }

@@ -1,4 +1,24 @@
-export type AnalyticsEventName = 'cuidado_abierto' | 'cuidado_completado';
+export type AnalyticsEventName =
+  | 'cuidado_abierto'
+  | 'cuidado_completado'
+  | 'registro_abierto'
+  | 'registro_completado'
+  | 'login_intentado'
+  | 'login_completado'
+  | 'recuperacion_solicitada'
+  | 'contrasena_restablecida'
+  | 'mascota_formulario_abierto'
+  | 'mascota_creada'
+  | 'mascota_edicion_abierta'
+  | 'mascota_actualizada'
+  | 'mascota_eliminada'
+  | 'cuidado_edicion_abierta'
+  | 'cuidado_actualizado'
+  | 'cuidado_eliminado'
+  | 'cuidado_reprogramado'
+  | 'cuidado_realizado'
+  | 'cuidado_asignado'
+  | 'recurrencia_configurada';
 
 export interface AnalyticsEvent {
   id: string;

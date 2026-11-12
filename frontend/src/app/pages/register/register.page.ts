@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 import { ApiError } from '../../models/auth.models';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -19,6 +20,7 @@ import { ThemeToggleComponent } from '../../shared/ui/theme-toggle/theme-toggle.
 })
 export class RegisterPage {
   private readonly auth = inject(AuthService);
+  private readonly analytics = inject(AnalyticsService);
   private readonly router = inject(Router);
   readonly submitting = signal(false);
   readonly serverError = signal<string | null>(null);
@@ -30,6 +32,10 @@ export class RegisterPage {
     confirmPassword: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
   });
 
+  constructor() {
+    this.analytics.track('registro_abierto');
+  }
+
   submit(): void {
     this.serverError.set(null);
     if (this.form.invalid || this.form.controls.password.value !== this.form.controls.confirmPassword.value) {
@@ -39,7 +45,10 @@ export class RegisterPage {
     this.submitting.set(true);
     const { fullName, email, password } = this.form.getRawValue();
     this.auth.register({ fullName, email, password }).pipe(finalize(() => this.submitting.set(false))).subscribe({
-      next: () => this.router.navigateByUrl('/mis-mascotas'),
+      next: () => {
+        this.analytics.track('registro_completado');
+        this.router.navigateByUrl('/mis-mascotas');
+      },
       error: (error: HttpErrorResponse) => this.serverError.set((error.error as ApiError)?.message || 'No se pudo crear la cuenta. Intenta nuevamente.'),
     });
   }

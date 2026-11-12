@@ -5,6 +5,7 @@ import { RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 
 import { PetService } from '../../core/pets/pet.service';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 import { Pet, PetSpecies } from '../../models/pet.model';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { IconComponent } from '../../shared/ui/icon/icon.component';
@@ -32,7 +33,7 @@ const SPECIES: Array<{ value: PetSpecies; label: string }> = [
           <h1>Mis mascotas</h1>
           <p class="welcome">Administra tus mascotas y consulta sus cuidados.</p>
         </div>
-        <app-button type="button" (click)="showForm.set(!showForm())">
+        <app-button type="button" (click)="toggleForm()">
           <app-icon name="add" [size]="18" />
           {{ showForm() ? 'Cerrar' : 'Registrar mascota' }}
         </app-button>
@@ -74,7 +75,7 @@ const SPECIES: Array<{ value: PetSpecies; label: string }> = [
           <app-icon name="pets" [size]="42" />
           <h2>Aún no tienes mascotas</h2>
           <p>Registra la primera para empezar a organizar sus cuidados.</p>
-          <button type="button" class="empty-action" (click)="showForm.set(true)">Registrar mi primera mascota</button>
+          <button type="button" class="empty-action" (click)="openForm()">Registrar mi primera mascota</button>
         </div>
       } @else {
         @if (successMessage()) { <p class="success-message" role="status">{{ successMessage() }}</p> }
@@ -129,6 +130,7 @@ const SPECIES: Array<{ value: PetSpecies; label: string }> = [
 })
 export class MyPetsPage implements OnInit {
   private readonly petService = inject(PetService);
+  private readonly analytics = inject(AnalyticsService);
   private readonly fb = inject(FormBuilder);
 
   readonly speciesOptions = SPECIES;
@@ -180,9 +182,11 @@ export class MyPetsPage implements OnInit {
       next: (pet) => {
         if (this.editingId()) {
           this.pets.update((pets) => pets.map((current) => current.id === pet.id ? pet : current));
+          this.analytics.track('mascota_actualizada', { especie: pet.species.toLowerCase() });
           this.successMessage.set('Mascota actualizada correctamente.');
         } else {
           this.pets.update((pets) => [pet, ...pets]);
+          this.analytics.track('mascota_creada', { especie: pet.species.toLowerCase() });
           this.successMessage.set('Mascota registrada correctamente.');
         }
         this.resetForm();
@@ -200,6 +204,7 @@ export class MyPetsPage implements OnInit {
     this.formError.set('');
     this.successMessage.set('');
     this.editingId.set(pet.id);
+    this.analytics.track('mascota_edicion_abierta', { especie: pet.species.toLowerCase() });
     this.form.patchValue({
       name: pet.name,
       species: pet.species,
@@ -229,6 +234,7 @@ export class MyPetsPage implements OnInit {
     this.petService.remove(pet.id).pipe(finalize(() => this.deletingId.set(null))).subscribe({
       next: () => {
         this.pets.update((pets) => pets.filter((current) => current.id !== pet.id));
+        this.analytics.track('mascota_eliminada');
         if (this.editingId() === pet.id) {
           this.cancelForm();
         }
@@ -244,6 +250,22 @@ export class MyPetsPage implements OnInit {
     this.editingId.set(null);
     this.form.reset({ name: '', species: '', breed: '', birthDate: '' });
     this.formError.set('');
+  }
+
+  openForm(): void {
+    this.formError.set('');
+    this.successMessage.set('');
+    this.editingId.set(null);
+    this.showForm.set(true);
+    this.analytics.track('mascota_formulario_abierto');
+  }
+
+  toggleForm(): void {
+    if (this.showForm()) {
+      this.cancelForm();
+    } else {
+      this.openForm();
+    }
   }
 
   speciesLabel(species: PetSpecies): string {

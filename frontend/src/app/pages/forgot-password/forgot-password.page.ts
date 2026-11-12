@@ -4,6 +4,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 import { finalize } from 'rxjs';
 import { AuthService } from '../../core/auth/auth.service';
+import { AnalyticsService } from '../../core/analytics/analytics.service';
 import { ApiError } from '../../models/auth.models';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { FormFieldComponent } from '../../shared/ui/form-field/form-field.component';
@@ -36,6 +37,7 @@ import { ThemeToggleComponent } from '../../shared/ui/theme-toggle/theme-toggle.
 })
 export class ForgotPasswordPage {
   private readonly auth = inject(AuthService);
+  private readonly analytics = inject(AnalyticsService);
   private readonly router = inject(Router);
   readonly submitting = signal(false);
   readonly serverError = signal<string | null>(null);
@@ -49,6 +51,7 @@ export class ForgotPasswordPage {
     if (this.form.invalid) { this.form.markAllAsTouched(); return; }
 
     this.submitting.set(true);
+    this.analytics.track('recuperacion_solicitada');
     this.auth.requestPasswordReset(this.form.getRawValue()).pipe(finalize(() => this.submitting.set(false))).subscribe({
       next: (response) => this.router.navigate(['/restablecer-contrasena'], { queryParams: { token: response.resetToken } }),
       error: (error: HttpErrorResponse) => this.serverError.set((error.error as ApiError)?.message || 'No se pudo iniciar la recuperación.'),

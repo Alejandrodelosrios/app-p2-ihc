@@ -18,8 +18,66 @@ public record AnalyticsEvent(
     public static final String CARE_OPENED = "cuidado_abierto";
     public static final String CARE_COMPLETED = "cuidado_completado";
 
-    private static final Set<String> ALLOWED_NAMES = Set.of(CARE_OPENED, CARE_COMPLETED);
-    private static final Set<String> ALLOWED_PROPS = Set.of("modo", "recurrente", "asignado");
+    // autenticacion
+    public static final String REGISTER_OPENED = "registro_abierto";
+    public static final String REGISTER_COMPLETED = "registro_completado";
+    public static final String LOGIN_ATTEMPTED = "login_intentado";
+    public static final String LOGIN_COMPLETED = "login_completado";
+    public static final String PASSWORD_RECOVERY_REQUESTED = "recuperacion_solicitada";
+    public static final String PASSWORD_RESET_COMPLETED = "contrasena_restablecida";
+
+    // mascotas
+    public static final String PET_FORM_OPENED = "mascota_formulario_abierto";
+    public static final String PET_CREATED = "mascota_creada";
+    public static final String PET_EDIT_OPENED = "mascota_edicion_abierta";
+    public static final String PET_UPDATED = "mascota_actualizada";
+    public static final String PET_DELETED = "mascota_eliminada";
+
+    // cuidados
+    public static final String CARE_EDIT_OPENED = "cuidado_edicion_abierta";
+    public static final String CARE_UPDATED = "cuidado_actualizado";
+    public static final String CARE_DELETED = "cuidado_eliminado";
+    public static final String CARE_RESCHEDULED = "cuidado_reprogramado";
+    public static final String CARE_MARKED_DONE = "cuidado_realizado";
+
+    // funcionalidades adicionales
+    public static final String CARE_ASSIGNED = "cuidado_asignado";
+    public static final String RECURRENCE_CONFIGURED = "recurrencia_configurada";
+
+    private static final Set<String> ALLOWED_NAMES = Set.of(
+        CARE_OPENED,
+        CARE_COMPLETED,
+        
+        REGISTER_OPENED,
+        REGISTER_COMPLETED,
+        LOGIN_ATTEMPTED,
+        LOGIN_COMPLETED,
+        PASSWORD_RECOVERY_REQUESTED,
+        PASSWORD_RESET_COMPLETED,
+
+        PET_FORM_OPENED,
+        PET_CREATED,
+        PET_EDIT_OPENED,
+        PET_UPDATED,
+        PET_DELETED,
+
+        CARE_EDIT_OPENED,
+        CARE_UPDATED,
+        CARE_DELETED,
+        CARE_RESCHEDULED,
+        CARE_MARKED_DONE,
+
+        CARE_ASSIGNED,
+        RECURRENCE_CONFIGURED
+
+    );
+    private static final Set<String> ALLOWED_PROPS = Set.of(
+        "modo",
+        "recurrente",
+        "asignado",
+        "especie",
+        "origen"
+    );
     // Solo "tokens": minúsculas, dígitos y guion bajo. Un correo o una frase no pasan.
     private static final Pattern SAFE_VALUE = Pattern.compile("[a-z0-9_]{1,30}");
 
