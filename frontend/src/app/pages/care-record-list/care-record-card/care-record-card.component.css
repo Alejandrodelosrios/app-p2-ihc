@@ -180,3 +180,65 @@
 .record-card__status--overdue {
   color: var(--color-danger);
 }
+
+
+.record-card__overdue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.late-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 40px;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.late-button--secondary {
+  background: transparent;
+  color: var(--color-primary-strong);
+}
+
+.late-button:disabled {
+  opacity: .65;
+  cursor: wait;
+}
+
+.late-button:focus-visible {
+  outline: 3px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+.overdue-panel {
+  display: grid;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+  padding: 0.85rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.overdue-panel label {
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.overdue-panel input,
+.overdue-panel select {
+  min-height: 40px;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+}

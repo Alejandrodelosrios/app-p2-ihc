@@ -17,6 +17,18 @@
     </a>
   </header>
 
+  @if (overdueCount() > 0 || onlyOverdue()) {
+    <div class="overdue-banner" role="status">
+      <app-icon name="warning" [size]="20" />
+      <span>
+        {{ overdueCount() === 1 ? 'Tienes 1 cuidado vencido' : 'Tienes ' + overdueCount() + ' cuidados vencidos' }}
+      </span>
+      <button type="button" class="overdue-banner__button" (click)="toggleOnlyOverdue()">
+        {{ onlyOverdue() ? 'Ver todos' : 'Ver solo vencidos' }}
+      </button>
+    </div>
+  }
+
   <form class="filters" [formGroup]="filterForm" (ngSubmit)="applyFilters()">
     <div class="filters__grid">
       <label class="filter-field">
@@ -43,6 +55,8 @@
             <option value="">Todos</option>
             <option value="PENDING">Pendiente</option>
             <option value="COMPLETED">Realizado</option>
+            <option value="COMPLETED_LATE">Realizado tarde</option>
+            <option value="SKIPPED">Omitido</option>
           </select>
         </label>
 
@@ -155,6 +169,9 @@
               [assignedToMe]="true"
               [personName]="personName(record, true)"
               [completing]="completingId() === record.id"
+              [resolving]="resolvingId() === record.id"
+              (completeLate)="completeLateRecord($event)"
+              (skip)="skipRecord($event)"
               [deleting]="deletingId() === record.id"
               (complete)="completeRecord($event)"
               (remove)="deleteRecord($event)"
@@ -181,6 +198,9 @@
               [record]="record"
               [personName]="personName(record, false)"
               [completing]="completingId() === record.id"
+              [resolving]="resolvingId() === record.id"
+              (completeLate)="completeLateRecord($event)"
+              (skip)="skipRecord($event)"
               [deleting]="deletingId() === record.id"
               (complete)="completeRecord($event)"
               (remove)="deleteRecord($event)"

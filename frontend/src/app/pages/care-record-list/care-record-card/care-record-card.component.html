@@ -1,4 +1,4 @@
-<article class="record-card" [class.record-card--completed]="record().status === 'COMPLETED'" [class.record-card--overdue]="overdue()">
+<article class="record-card" [class.record-card--completed]="done() || record().status === 'SKIPPED'" [class.record-card--overdue]="overdue()">
   <div class="record-card__header">
     <div class="record-card__pet">
       <span class="record-card__icon">
@@ -41,11 +41,11 @@
   <div class="record-card__footer">
     <span
       class="record-card__status"
-      [class.record-card__status--completed]="record().status === 'COMPLETED'"
+      [class.record-card__status--completed]="done()"
       [class.record-card__status--overdue]="overdue()"
     >
-      <app-icon [name]="record().status === 'COMPLETED' ? 'task_alt' : overdue() ? 'warning' : 'schedule'" [size]="18" />
-      {{ record().status === 'COMPLETED' ? 'Realizado' : overdue() ? 'Vencido' : 'Pendiente' }}
+      <app-icon [name]="done() ? 'task_alt' : record().status === 'SKIPPED' ? 'do_not_disturb_on' : overdue() ? 'warning' : 'schedule'" [size]="18" />
+      {{ statusLabel() }}
     </span>
 
     <div class="record-card__actions">
@@ -71,19 +71,81 @@
       </button>
       }
 
+      @if (!overdue()) {
       <button
         type="button"
         class="complete-button"
-        [disabled]="record().status === 'COMPLETED' || completing()"
-        [attr.aria-label]="record().status === 'COMPLETED' ? 'Este cuidado ya fue realizado' : 'Marcar cuidado de ' + record().petName + ' como realizado'"
-        [attr.title]="record().status === 'COMPLETED' ? 'Este cuidado ya fue realizado y no puede marcarse nuevamente' : null"
+        [disabled]="done() || record().status === 'SKIPPED' || completing()"
+        [attr.aria-label]="done() ? 'Este cuidado ya fue realizado' : 'Marcar cuidado de ' + record().petName + ' como realizado'"
+        [attr.title]="done() ? 'Este cuidado ya fue realizado y no puede marcarse nuevamente' : null"
         (click)="complete.emit(record().id)"
       >
         <app-icon
-          [name]="completing() ? 'progress_activity' : record().status === 'COMPLETED' ? 'task_alt' : 'check'"
+          [name]="completing() ? 'progress_activity' : done() ? 'task_alt' : 'check'"
           [size]="22"
         />
       </button>
+      }
     </div>
   </div>
+
+  @if (record().status === 'SKIPPED' && record().changeReason) {
+    <p class="record-card__assignment">
+      <app-icon name="do_not_disturb_on" [size]="17" />
+      Omitido: {{ record().changeReason }}
+    </p>
+  }
+
+  @if (overdue()) {
+    @if (assignedToMe()) {
+      <p class="record-card__restriction">
+        Este cuidado está vencido. Solo quien lo gestiona puede marcarlo como realizado tarde u omitirlo.
+      </p>
+    } @else {
+      <div class="record-card__overdue-actions">
+        <button type="button" class="late-button" [disabled]="resolving()" (click)="openPanel('late')">
+          <app-icon name="event_available" [size]="18" /> Realizado tarde
+        </button>
+        <button type="button" class="late-button late-button--secondary" [disabled]="resolving()" (click)="openPanel('skip')">
+          <app-icon name="do_not_disturb_on" [size]="18" /> Omitir
+        </button>
+      </div>
+
+      @if (panel() === 'late') {
+        <div class="overdue-panel">
+          <label for="late-date-{{ record().id }}">¿Cuándo se hizo realmente?</label>
+          <input
+            id="late-date-{{ record().id }}"
+            type="date"
+            [ngModel]="lateDate()"
+            (ngModelChange)="lateDate.set($event)"
+            [min]="record().careDate"
+            [max]="today"
+          />
+          <button type="button" class="late-button" [disabled]="resolving() || !lateDate()" (click)="confirmLate()">
+            Confirmar fecha
+          </button>
+        </div>
+      }
+
+      @if (panel() === 'skip') {
+        <div class="overdue-panel">
+          <label for="skip-reason-{{ record().id }}">Motivo de la omisión (obligatorio)</label>
+          <select
+            id="skip-reason-{{ record().id }}"
+            [ngModel]="skipReason()"
+            (ngModelChange)="skipReason.set($event)"
+          >
+            <option value="">Selecciona un motivo</option>
+            @for (reason of skipReasons; track reason) {
+              <option [value]="reason">{{ reason }}</option>
+            }
+          </select>
+          <button type="button" class="late-button" [disabled]="resolving() || !skipReason()" (click)="confirmSkip()">
+            Confirmar omisión
+          </button>
+        </div>
+      }
+    }
+  }
 </article>

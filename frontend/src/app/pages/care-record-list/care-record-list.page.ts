@@ -5,7 +5,14 @@ import { catchError, finalize, forkJoin, of } from 'rxjs';
 
 import { CareRecordService } from '../../core/care/care-record';
 import { AuthService } from '../../core/auth/auth.service';
-import { CareRecord, CareRecordCareType, CareRecordFilters, CareRecordStatus } from '../../models/care-record.model';
+import {
+  CareRecord,
+  CareRecordCareType,
+  CareRecordFilters,
+  CareRecordStatus,
+  careStatusLabel,
+  isCareOverdue,
+} from '../../models/care-record.model';
 import { IconComponent } from '../../shared/ui/icon/icon.component';
 import { CareRecordCardComponent } from './care-record-card/care-record-card.component';
 
@@ -29,15 +36,20 @@ export class CareRecordListPage implements OnInit {
   private readonly router = inject(Router);
 
   readonly records = signal<CareRecord[]>([]);
+  readonly onlyOverdue = signal(false);
+  readonly overdueCount = computed(() => this.records().filter((record) => isCareOverdue(record)).length);
+  private readonly visibleRecords = computed(() =>
+    this.onlyOverdue() ? this.records().filter((record) => isCareOverdue(record)) : this.records(),
+  );
   readonly assignedRecords = computed(() => {
     const userId = this.authService.user()?.id;
-    return this.records().filter((record) =>
+    return this.visibleRecords().filter((record) =>
       !!userId && record.assignedToUserId === userId && record.userId !== userId,
     );
   });
   readonly ownedRecords = computed(() => {
     const userId = this.authService.user()?.id;
-    return userId ? this.records().filter((record) => record.userId === userId) : this.records();
+    return userId ? this.visibleRecords().filter((record) => record.userId === userId) : this.visibleRecords();
   });
   readonly loading = signal(true);
   readonly errorMessage = signal('');
@@ -45,6 +57,7 @@ export class CareRecordListPage implements OnInit {
   readonly successMessage = signal('');
   readonly peopleNames = signal<Record<string, string>>({});
   readonly completingId = signal<string | null>(null);
+  readonly resolvingId = signal<string | null>(null);
   readonly deletingId = signal<string | null>(null);
   readonly showMoreFilters = signal(false);
 
@@ -60,6 +73,7 @@ export class CareRecordListPage implements OnInit {
 
   ngOnInit(): void {
     this.restoreFiltersFromUrl();
+    this.onlyOverdue.set(this.route.snapshot.queryParamMap.get('vencidos') === '1');
     const filters = this.filterForm.getRawValue();
     this.showMoreFilters.set(!!filters.status || !!filters.careType);
     this.loadRecords();
@@ -92,11 +106,17 @@ export class CareRecordListPage implements OnInit {
     this.loadRecords();
   }
 
+  toggleOnlyOverdue(): void {
+    this.onlyOverdue.update((value) => !value);
+    this.syncFiltersToUrl();
+  }
+
   toggleMoreFilters(): void {
     this.showMoreFilters.update((visible) => !visible);
   }
 
   clearFilters(): void {
+    this.onlyOverdue.set(false);
     this.filterForm.reset({
       petId: '',
       petName: '',
@@ -122,7 +142,10 @@ export class CareRecordListPage implements OnInit {
       active.push(`Mascota: ${value.petName.trim()}`);
     }
     if (value.status) {
-      active.push(`Estado: ${value.status === 'PENDING' ? 'Pendiente' : 'Realizado'}`);
+      active.push(`Estado: ${careStatusLabel(value.status)}`);
+    }
+    if (this.onlyOverdue()) {
+      active.push('Solo vencidos');
     }
     if (value.careType) {
       const labels = {
@@ -168,6 +191,7 @@ export class CareRecordListPage implements OnInit {
       queryParams: {
         petId: value.petId || null,
         petName: value.petName || null,
+        vencidos: this.onlyOverdue() ? '1' : null,
         status: value.status || null,
         careType: value.careType || null,
         dateFilter: value.dateFilter || null,
@@ -295,6 +319,59 @@ export class CareRecordListPage implements OnInit {
           this.statusErrorMessage.set('No se pudo marcar el cuidado como realizado');
         },
       });
+  }
+
+  completeLateRecord(event: { id: string; completedOn: string }): void {
+    this.resolveOverdue(
+      event.id,
+      this.careRecordService.completeLate(event.id, event.completedOn),
+      'Cuidado registrado como realizado tarde.',
+      'No se pudo registrar el cuidado como realizado tarde',
+    );
+  }
+
+  skipRecord(event: { id: string; reason: string }): void {
+    this.resolveOverdue(
+      event.id,
+      this.careRecordService.skip(event.id, event.reason),
+      'Cuidado omitido. El motivo quedó guardado.',
+      'No se pudo omitir el cuidado',
+    );
+  }
+
+  private resolveOverdue(
+    id: string,
+    request: ReturnType<CareRecordService['completeLate']>,
+    successMessage: string,
+    errorMessage: string,
+  ): void {
+    if (this.resolvingId() !== null) {
+      return;
+    }
+
+    this.resolvingId.set(id);
+    this.statusErrorMessage.set('');
+    this.successMessage.set('');
+
+    request.pipe(finalize(() => this.resolvingId.set(null))).subscribe({
+      next: (updated) => {
+        this.records.update((records) =>
+          records.map((record) => (record.id === updated.id ? updated : record)),
+        );
+        this.successMessage.set(
+          updated.recurrenceIntervalDays && updated.status === 'PENDING'
+            ? `${successMessage} Próxima fecha: ${this.formatDisplayDate(updated.careDate)}`
+            : successMessage,
+        );
+      },
+      error: (error) => {
+        this.statusErrorMessage.set(
+          error?.status === 403
+            ? 'Solo quien gestiona el cuidado puede resolver un cuidado vencido'
+            : errorMessage,
+        );
+      },
+    });
   }
 
   deleteRecord(id: string): void {
