@@ -816,6 +816,145 @@ class CareRecordServiceTest {
         assertEquals("Milo", records.get(0).petName());
     }
 
+    // ------------------------------------------------------ cuidados vencidos
+
+    private static CareRecord overdue(UUID userId, UUID assigneeId, Integer intervalDays) {
+        return new CareRecord(
+                UUID.fromString("383d827e-ea91-4317-b0a9-a55768f759aa"),
+                userId,
+                PET_ID,
+                "Vacuna",
+                LocalDate.now().minusDays(3),
+                Instant.parse("2026-10-08T00:00:00Z"),
+                CareRecordStatus.PENDING,
+                assigneeId,
+                intervalDays
+        );
+    }
+
+    private void givenManagerAndOverdue(User user, CareRecord overdue) {
+        givenActivePet(pet(user.id(), "Milo"));
+        when(users.findByEmail(user.email())).thenReturn(Optional.of(user));
+        when(careRecords.findById(overdue.id())).thenReturn(Optional.of(overdue));
+        when(careRecords.save(any(CareRecord.class))).thenAnswer(invocation -> invocation.getArgument(0));
+    }
+
+    @Test
+    void completingOverdueCareLateKeepsRealDateInHistory() {
+        User user = user();
+        CareRecord overdue = overdue(user.id(), null, null);
+        givenManagerAndOverdue(user, overdue);
+        LocalDate realDate = LocalDate.now().minusDays(1);
+
+        CareRecord result = service.completeLate(user.email(), overdue.id(), realDate).record();
+
+        assertEquals(CareRecordStatus.COMPLETED_LATE, result.status());
+        ArgumentCaptor<CareHistoryEntry> entry = ArgumentCaptor.forClass(CareHistoryEntry.class);
+        verify(history).save(entry.capture());
+        assertEquals(CareHistoryAction.COMPLETED_LATE, entry.getValue().action());
+        assertEquals(overdue.careDate(), entry.getValue().previousCareDate());
+        assertEquals(realDate, entry.getValue().currentCareDate());
+    }
+
+    @Test
+    void completingRecurringOverdueLateSchedulesNextFromPlannedDate() {
+        User user = user();
+        CareRecord overdue = overdue(user.id(), null, 7);
+        givenManagerAndOverdue(user, overdue);
+
+        CareRecord result = service.completeLate(user.email(), overdue.id(), null).record();
+
+        assertEquals(CareRecordStatus.PENDING, result.status());
+        assertEquals(overdue.careDate().plusDays(7), result.careDate());
+    }
+
+    @Test
+    void completingLateWithFutureDateIsRejected() {
+        User user = user();
+        CareRecord overdue = overdue(user.id(), null, null);
+        givenManagerAndOverdue(user, overdue);
+
+        assertThrows(NotAllowedException.class, () -> service.completeLate(
+                user.email(), overdue.id(), LocalDate.now().plusDays(1)));
+        verify(careRecords, never()).save(any());
+    }
+
+    @Test
+    void skippingOverdueCareRequiresReason() {
+        User user = user();
+        CareRecord overdue = overdue(user.id(), null, null);
+        givenManagerAndOverdue(user, overdue);
+
+        assertThrows(NotAllowedException.class, () -> service.skip(user.email(), overdue.id(), "  "));
+        verify(careRecords, never()).save(any());
+    }
+
+    @Test
+    void skippingOverdueCareStoresReasonAndHistory() {
+        User user = user();
+        CareRecord overdue = overdue(user.id(), null, null);
+        givenManagerAndOverdue(user, overdue);
+
+        CareRecord result = service.skip(user.email(), overdue.id(), " Viaje ").record();
+
+        assertEquals(CareRecordStatus.SKIPPED, result.status());
+        assertEquals("Viaje", result.changeReason());
+        ArgumentCaptor<CareHistoryEntry> entry = ArgumentCaptor.forClass(CareHistoryEntry.class);
+        verify(history).save(entry.capture());
+        assertEquals(CareHistoryAction.SKIPPED, entry.getValue().action());
+        assertEquals("Viaje", entry.getValue().changeReason());
+    }
+
+    @Test
+    void skippingRecurringOverdueMovesToNextPlannedDate() {
+        User user = user();
+        CareRecord overdue = overdue(user.id(), null, 10);
+        givenManagerAndOverdue(user, overdue);
+
+        CareRecord result = service.skip(user.email(), overdue.id(), "Sin stock").record();
+
+        assertEquals(CareRecordStatus.PENDING, result.status());
+        assertEquals(overdue.careDate().plusDays(10), result.careDate());
+    }
+
+    @Test
+    void assigneeWithoutManagementPermissionCannotResolveOverdueCare() {
+        User owner = user();
+        User helper = assignee();
+        CareRecord overdue = overdue(owner.id(), helper.id(), null);
+        when(users.findByEmail(helper.email())).thenReturn(Optional.of(helper));
+        when(careRecords.findById(overdue.id())).thenReturn(Optional.of(overdue));
+
+        assertThrows(ForbiddenException.class,
+                () -> service.completeLate(helper.email(), overdue.id(), null));
+        assertThrows(ForbiddenException.class,
+                () -> service.skip(helper.email(), overdue.id(), "Motivo"));
+        verify(careRecords, never()).save(any());
+    }
+
+    @Test
+    void notOverdueCareCannotBeResolvedAsOverdue() {
+        User user = user();
+        CareRecord upcoming = record(user.id(), CareRecordStatus.PENDING);
+        givenManagerAndOverdue(user, upcoming);
+
+        assertThrows(NotAllowedException.class,
+                () -> service.completeLate(user.email(), upcoming.id(), null));
+    }
+
+    @Test
+    void alreadyResolvedOverdueCareIsConflict() {
+        User user = user();
+        CareRecord done = new CareRecord(
+                UUID.randomUUID(), user.id(), PET_ID, "Vacuna",
+                LocalDate.now().minusDays(3), Instant.now(),
+                CareRecordStatus.SKIPPED, null, null);
+        givenManagerAndOverdue(user, done);
+
+        assertThrows(ConflictException.class,
+                () -> service.skip(user.email(), done.id(), "Otro motivo"));
+    }
+
     // --------------------------------------------------------------- helpers
 
     private void givenActivePet(Pet pet) {

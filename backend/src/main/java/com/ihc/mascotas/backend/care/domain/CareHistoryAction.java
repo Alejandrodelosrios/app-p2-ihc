@@ -2,5 +2,7 @@ package com.ihc.mascotas.backend.care.domain;
 
 public enum CareHistoryAction {
     COMPLETED,
-    RESCHEDULED
+    RESCHEDULED,
+    COMPLETED_LATE,
+    SKIPPED
 }

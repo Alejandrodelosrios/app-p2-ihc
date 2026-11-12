@@ -4,5 +4,7 @@ public enum CareRecordStatus {
     PENDING,
     COMPLETED,
     RESCHEDULED,
-    CANCELLED
+    CANCELLED,
+    COMPLETED_LATE,
+    SKIPPED
 }

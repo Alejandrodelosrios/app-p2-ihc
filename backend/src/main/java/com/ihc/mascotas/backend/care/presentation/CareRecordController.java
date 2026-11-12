@@ -67,6 +67,28 @@ public class CareRecordController {
         return toResponse(careRecordService.complete(principal.getName(), id));
     }
 
+    @PatchMapping("/{id}/complete-late")
+    public CareRecordResponse completeLate(
+            Principal principal,
+            @PathVariable UUID id,
+            @RequestBody(required = false) CompleteLateCareRecordRequest request
+    ) {
+        return toResponse(careRecordService.completeLate(
+                principal.getName(),
+                id,
+                request == null ? null : request.completedOn()
+        ));
+    }
+
+    @PatchMapping("/{id}/skip")
+    public CareRecordResponse skip(
+            Principal principal,
+            @PathVariable UUID id,
+            @Valid @RequestBody SkipCareRecordRequest request
+    ) {
+        return toResponse(careRecordService.skip(principal.getName(), id, request.reason()));
+    }
+
     @PutMapping("/{id}/reschedule")
     public CareRecordResponse reschedule(
             Principal principal,
