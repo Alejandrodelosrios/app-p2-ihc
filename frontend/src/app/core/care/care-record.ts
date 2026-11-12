@@ -44,6 +44,14 @@ export class CareRecordService {
     return this.http.patch<CareRecord>(`${this.url}/${id}/complete`, {});
   }
 
+  completeLate(id: string, completedOn?: string): Observable<CareRecord> {
+    return this.http.patch<CareRecord>(`${this.url}/${id}/complete-late`, completedOn ? { completedOn } : {});
+  }
+
+  skip(id: string, reason: string): Observable<CareRecord> {
+    return this.http.patch<CareRecord>(`${this.url}/${id}/skip`, { reason });
+  }
+
   update(id: string, careRecord: CreateCareRecordRequest): Observable<CareRecord> {
     return this.http.put<CareRecord>(`${this.url}/${id}`, careRecord);
   }

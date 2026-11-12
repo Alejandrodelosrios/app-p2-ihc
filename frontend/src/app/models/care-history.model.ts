@@ -1,4 +1,4 @@
-export type CareHistoryAction = 'COMPLETED' | 'RESCHEDULED';
+export type CareHistoryAction = 'COMPLETED' | 'RESCHEDULED' | 'COMPLETED_LATE' | 'SKIPPED';
 
 export interface CareHistoryEntry {
   id: string;
@@ -10,4 +10,5 @@ export interface CareHistoryEntry {
   currentCareDate: string;
   occurredAt: string;
   performedByName?: string | null;
+  changeReason?: string | null;
 }

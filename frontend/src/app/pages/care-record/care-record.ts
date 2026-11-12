@@ -131,7 +131,9 @@ export class CareRecord {
 
   canReschedule(): boolean {
     const record = this.recordFromState();
-    return record?.status !== 'COMPLETED';
+    return record?.status !== 'COMPLETED'
+      && record?.status !== 'COMPLETED_LATE'
+      && record?.status !== 'SKIPPED';
   }
 
   toggleRecurrence(event: Event): void {
