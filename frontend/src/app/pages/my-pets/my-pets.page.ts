@@ -9,6 +9,7 @@ import { AnalyticsService } from '../../core/analytics/analytics.service';
 import { Pet, PetSpecies } from '../../models/pet.model';
 import { ButtonComponent } from '../../shared/ui/button/button.component';
 import { IconComponent } from '../../shared/ui/icon/icon.component';
+import { deletePetConfirmMessage } from './delete-pet-message';
 
 const SPECIES: Array<{ value: PetSpecies; label: string }> = [
   { value: 'DOG', label: 'Perro' },
@@ -224,7 +225,7 @@ export class MyPetsPage implements OnInit {
       return;
     }
 
-    if (!confirm(`¿Eliminar a ${pet.name}? Esta acción no se puede deshacer.`)) {
+    if (!confirm(deletePetConfirmMessage(pet.name))) {
       return;
     }
 
