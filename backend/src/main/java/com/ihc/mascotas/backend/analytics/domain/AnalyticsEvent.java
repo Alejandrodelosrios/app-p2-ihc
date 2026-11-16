@@ -40,6 +40,11 @@ public record AnalyticsEvent(
     public static final String CARE_RESCHEDULED = "cuidado_reprogramado";
     public static final String CARE_MARKED_DONE = "cuidado_realizado";
 
+    // cuenta y datos personales (Tarea 10)
+    public static final String ACCOUNT_DELETE_STARTED = "eliminar_cuenta_inicio";
+    public static final String ACCOUNT_DELETE_SUCCEEDED = "eliminar_cuenta_exito";
+    public static final String DATA_DOWNLOADED = "datos_descargados";
+
     // funcionalidades adicionales
     public static final String CARE_ASSIGNED = "cuidado_asignado";
     public static final String RECURRENCE_CONFIGURED = "recurrencia_configurada";
@@ -68,7 +73,11 @@ public record AnalyticsEvent(
         CARE_MARKED_DONE,
 
         CARE_ASSIGNED,
-        RECURRENCE_CONFIGURED
+        RECURRENCE_CONFIGURED,
+
+        ACCOUNT_DELETE_STARTED,
+        ACCOUNT_DELETE_SUCCEEDED,
+        DATA_DOWNLOADED
 
     );
     private static final Set<String> ALLOWED_PROPS = Set.of(
@@ -76,7 +85,8 @@ public record AnalyticsEvent(
         "recurrente",
         "asignado",
         "especie",
-        "origen"
+        "origen",
+        "formato"
     );
     // Solo "tokens": minúsculas, dígitos y guion bajo. Un correo o una frase no pasan.
     private static final Pattern SAFE_VALUE = Pattern.compile("[a-z0-9_]{1,30}");
