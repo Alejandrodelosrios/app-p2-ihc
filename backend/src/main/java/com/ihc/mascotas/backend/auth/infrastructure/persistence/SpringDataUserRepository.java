@@ -9,6 +9,6 @@ import org.springframework.data.jpa.repository.JpaRepository;
 interface SpringDataUserRepository extends JpaRepository<UserJpaEntity, UUID> {
     boolean existsByEmail(String email);
     Optional<UserJpaEntity> findByEmail(String email);
-    List<UserJpaEntity> findTop10ByEmailStartingWithIgnoreCaseAndIdNotOrderByEmailAsc(
+    List<UserJpaEntity> findTop10ByEmailStartingWithIgnoreCaseAndIdNotAndDeletedAtIsNullOrderByEmailAsc(
         String emailPrefix, UUID excludedUserId);
 }

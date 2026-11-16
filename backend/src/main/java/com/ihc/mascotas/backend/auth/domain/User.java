@@ -9,5 +9,14 @@ public record User(
         String email,
         String passwordHash,
         Instant createdAt,
-        Instant updatedAt) {
+        Instant updatedAt,
+        Instant deletedAt) {
+  
+  public User(UUID id, String fullName, String email, String passwordHash, Instant createdAt, Instant updatedAt){
+        this(id,fullName,email,passwordHash,createdAt,updatedAt,null);
+  }
+  
+  public boolean isActive(){
+        return deletedAt == null;
+  }
 }

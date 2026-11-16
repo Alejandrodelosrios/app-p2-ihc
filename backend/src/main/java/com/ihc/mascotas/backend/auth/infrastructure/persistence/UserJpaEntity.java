@@ -29,14 +29,18 @@ class UserJpaEntity {
     @Column(name = "updated_at", nullable = false)
     Instant updatedAt;
 
+    @Column(name = "deleted_at")
+    Instant deletedAt;
+
     protected UserJpaEntity() { }
 
-    UserJpaEntity(UUID id, String fullName, String email, String passwordHash, Instant createdAt, Instant updatedAt) {
+    UserJpaEntity(UUID id, String fullName, String email, String passwordHash, Instant createdAt, Instant updatedAt, Instant deletedAt){
         this.id = id;
         this.fullName = fullName;
         this.email = email;
         this.passwordHash = passwordHash;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.deletedAt = deletedAt;
     }
 }

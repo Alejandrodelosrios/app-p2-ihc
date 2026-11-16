@@ -35,7 +35,7 @@ class JpaUserRepositoryAdapter implements UserRepository {
 
     @Override
     public List<User> searchByEmailPrefix(String emailPrefix, UUID excludedUserId) {
-        return repository.findTop10ByEmailStartingWithIgnoreCaseAndIdNotOrderByEmailAsc(
+        return repository.findTop10ByEmailStartingWithIgnoreCaseAndIdNotAndDeletedAtIsNullOrderByEmailAsc(
                         emailPrefix, excludedUserId)
                 .stream()
                 .map(JpaUserRepositoryAdapter::toDomain)
@@ -45,11 +45,11 @@ class JpaUserRepositoryAdapter implements UserRepository {
     @Override
     public User save(User user) {
         UserJpaEntity entity = new UserJpaEntity(
-                user.id(), user.fullName(), user.email(), user.passwordHash(), user.createdAt(), user.updatedAt());
+                user.id(), user.fullName(), user.email(), user.passwordHash(), user.createdAt(), user.updatedAt(), user.deletedAt());
         return toDomain(repository.save(entity));
     }
 
     private static User toDomain(UserJpaEntity entity) {
-        return new User(entity.id, entity.fullName, entity.email, entity.passwordHash, entity.createdAt, entity.updatedAt);
+        return new User(entity.id, entity.fullName, entity.email, entity.passwordHash, entity.createdAt, entity.updatedAt, entity.deletedAt);
     }
 }

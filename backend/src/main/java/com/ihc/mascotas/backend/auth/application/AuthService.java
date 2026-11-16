@@ -59,7 +59,7 @@ public class AuthService {
     public AuthResult login(String email, String rawPassword) {
         User user = users.findByEmail(normalizeEmail(email))
                 .orElseThrow(() -> new BadCredentialsException("Credenciales inválidas"));
-        if (!passwordEncoder.matches(rawPassword, user.passwordHash())) {
+        if (!user.isActive() || !passwordEncoder.matches(rawPassword, user.passwordHash())) {
             throw new BadCredentialsException("Credenciales inválidas");
         }
         return toResult(user);
@@ -101,7 +101,11 @@ public class AuthService {
     }
 
     private static UserView toView(User user) {
-        return new UserView(user.id(), user.fullName(), user.email());
+        // Una cuenta eliminada conserva su nombre (para saber quién hizo cada cuidado),
+        // se marca como tal y no muestra correo.
+        String name = user.isActive() ? user.fullName() : user.fullName() + " (cuenta eliminada)";
+        String email = user.isActive() ? user.email() : "";
+        return new UserView(user.id(), name, email);
     }
 
     private static String normalizeEmail(String email) {
