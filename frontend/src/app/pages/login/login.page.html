@@ -10,6 +10,7 @@
       <p>Ingresa para continuar cuidando a tus mascotas.</p>
     </div>
     @if (passwordChanged) { <div class="form-success" role="status">Contraseña actualizada. Inicia sesión nuevamente.</div> }
+    @if (accountDeleted) { <div class="form-success" role="status">Tu cuenta fue eliminada. Ya no se puede iniciar sesión con ella.</div> }
     <form class="auth-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
       <app-form-field fieldId="login-email" label="Correo electrónico" type="email" autocomplete="email" placeholder="tu@correo.com" [control]="form.controls.email" [error]="errorFor('email')" />
       <app-form-field fieldId="login-password" label="Contraseña" type="password" autocomplete="current-password" placeholder="Mínimo 8 caracteres" [control]="form.controls.password" [error]="errorFor('password')" />

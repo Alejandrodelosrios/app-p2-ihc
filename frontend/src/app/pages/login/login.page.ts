@@ -26,6 +26,7 @@ export class LoginPage {
   readonly submitting = signal(false);
   readonly serverError = signal<string | null>(null);
   readonly passwordChanged = this.route.snapshot.queryParamMap.get('passwordChanged') === '1';
+  readonly accountDeleted = this.route.snapshot.queryParamMap.get('cuentaEliminada') === '1';
 
   readonly form = new FormGroup({
     email: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),

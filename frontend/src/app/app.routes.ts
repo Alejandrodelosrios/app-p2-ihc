@@ -109,6 +109,20 @@ export const routes: Routes = [
       },
 
       {
+        path: 'mis-datos',
+        loadComponent: () =>
+          import('./pages/my-data/my-data.page').then((m) => m.MyDataPage),
+      },
+
+      {
+        path: 'eliminar-cuenta',
+        loadComponent: () =>
+          import('./pages/delete-account/delete-account.page').then(
+            (m) => m.DeleteAccountPage,
+          ),
+      },
+
+      {
         path: 'cambiar-contrasena',
         loadComponent: () =>
           import('./pages/change-password/change-password.page').then(

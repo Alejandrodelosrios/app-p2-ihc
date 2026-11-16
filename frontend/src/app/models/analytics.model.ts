@@ -18,7 +18,10 @@ export type AnalyticsEventName =
   | 'cuidado_reprogramado'
   | 'cuidado_realizado'
   | 'cuidado_asignado'
-  | 'recurrencia_configurada';
+  | 'recurrencia_configurada'
+  | 'eliminar_cuenta_inicio'
+  | 'eliminar_cuenta_exito'
+  | 'datos_descargados';
 
 export interface AnalyticsEvent {
   id: string;
