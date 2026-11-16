@@ -13,13 +13,21 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2Error;
+import org.springframework.security.oauth2.core.OAuth2TokenValidator;
+import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jose.jws.MacAlgorithm;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.oauth2.jwt.JwtValidators;
 import org.springframework.security.web.SecurityFilterChain;
+
+import com.ihc.mascotas.backend.auth.domain.User;
+import com.ihc.mascotas.backend.auth.domain.UserRepository;
 
 @Configuration
 @EnableMethodSecurity
@@ -69,11 +77,21 @@ public class SecurityConfig {
     @Bean
     JwtDecoder jwtDecoder(
             SecretKey secretKey,
-            @Value("${app.security.jwt.issuer:mascotas-al-dia}") String issuer) {
+            @Value("${app.security.jwt.issuer:mascotas-al-dia}") String issuer,
+            UserRepository users) {
         NimbusJwtDecoder decoder = NimbusJwtDecoder.withSecretKey(secretKey)
                 .macAlgorithm(MacAlgorithm.HS256)
                 .build();
-        decoder.setJwtValidator(JwtValidators.createDefaultWithIssuer(issuer));
+        OAuth2TokenValidator<Jwt> activeAccount = jwt -> {
+            boolean active = jwt.getSubject() != null
+                    && users.findByEmail(jwt.getSubject()).map(User::isActive).orElse(false);
+            return active
+                    ? OAuth2TokenValidatorResult.success()
+                    : OAuth2TokenValidatorResult.failure(
+                            new OAuth2Error("invalid_token", "La cuenta ya no está disponible", null));
+        };
+        decoder.setJwtValidator(new DelegatingOAuth2TokenValidator<>(
+                JwtValidators.createDefaultWithIssuer(issuer), activeAccount));
         return decoder;
     }
 }
