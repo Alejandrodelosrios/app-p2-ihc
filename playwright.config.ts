@@ -73,7 +73,8 @@ export default defineConfig({
 
   /* Run your local dev server before starting the tests */
    webServer: {
-     command: 'npm start',
+     command: 'npm start --prefix frontend',
+     timeout: 120_000,
      url: 'http://localhost:4200',
      reuseExistingServer: true,
    },
