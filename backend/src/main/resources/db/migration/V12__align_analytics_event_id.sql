@@ -1,3 +1,7 @@
+ALTER TABLE eventos ALTER COLUMN id DROP DEFAULT;
+
 ALTER TABLE eventos
   ALTER COLUMN id TYPE UUID
   USING md5(id::text)::uuid;
+
+DROP SEQUENCE IF EXISTS eventos_id_seq;

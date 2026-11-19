@@ -98,8 +98,8 @@ public class DemoDataSeeder implements ApplicationRunner {
     private void seedCare(UUID careId, UUID petId, String care, String careDate, String status) {
         jdbcTemplate.update("""
                 INSERT INTO care_record
-                    (id, user_id, pet_id, care, care_date, created_at, status)
-                SELECT ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?
+                    (id, user_id, pet_id, care, care_date, original_care_date, created_at, status)
+                SELECT ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?
                 WHERE EXISTS (SELECT 1 FROM pet WHERE id = ?)
                   AND NOT EXISTS (SELECT 1 FROM care_record WHERE id = ?)
                 """,
@@ -108,6 +108,7 @@ public class DemoDataSeeder implements ApplicationRunner {
                 petId,
                 care,
                 java.sql.Date.valueOf(careDate),
+                java.sql.Date.valueOf(careDate), // original_care_date: igual a la fecha inicial
                 status,
                 petId,
                 careId);
